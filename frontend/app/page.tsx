@@ -54,7 +54,7 @@ export default function Home() {
           </Link>
         </div>
 
-        <p className="text-slate-400 text-sm">
+        <p className="text-slate-500 dark:text-slate-400 text-sm">
           Professional Medical Data Management System
         </p>
       </div>

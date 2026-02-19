@@ -43,7 +43,7 @@ export default function DoctorProfile() {
 
     const fetchProfile = useCallback(async (token: string) => {
         try {
-            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/v1/doctors/me`, {
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1'}/doctors/me`, {
                 headers: { "Authorization": `Bearer ${token}` }
             });
             if (res.ok) {
@@ -71,7 +71,7 @@ export default function DoctorProfile() {
         setLoading(true);
         const token = localStorage.getItem("token");
         try {
-            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/v1/doctors/me`, {
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1'}/doctors/me`, {
                 method: "PATCH",
                 headers: {
                     "Authorization": `Bearer ${token}`,

@@ -39,7 +39,14 @@ interface PredictionSummary {
 function DoctorPatientsContent() {
     const searchParams = useSearchParams();
     const router = useRouter();
+    const patientIdParam = searchParams.get("id");
     const activeTab = searchParams.get("tab") || "old";
+
+    useEffect(() => {
+        if (patientIdParam) {
+            setSelectedPatientId(parseInt(patientIdParam));
+        }
+    }, [patientIdParam]);
 
     const [patients, setPatients] = useState<Patient[]>([]);
     const [loading, setLoading] = useState(false);
@@ -70,7 +77,7 @@ function DoctorPatientsContent() {
         const token = localStorage.getItem("token");
         const skip = (page - 1) * 20;
         try {
-            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/v1/doctors/patients?skip=${skip}&limit=20&search=${search}`, {
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1'}/doctors/patients?skip=${skip}&limit=20&search=${search}`, {
                 headers: { "Authorization": `Bearer ${token}` }
             });
             if (res.ok) setPatients(await res.json());
@@ -84,22 +91,30 @@ function DoctorPatientsContent() {
         setDetailLoading(true);
         const token = localStorage.getItem("token");
         try {
-            const [detRes, metRes, predRes] = await Promise.all([
-                fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/v1/doctors/patients/${id}`, {
-                    headers: { "Authorization": `Bearer ${token}` }
-                }),
-                fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/v1/doctors/patients/${id}/metrics`, {
-                    headers: { "Authorization": `Bearer ${token}` }
-                }),
-                fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/v1/doctors/patients/${id}/predictions`, {
-                    headers: { "Authorization": `Bearer ${token}` }
-                })
-            ]);
+            // Fetch details first as it is critical
+            const detRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1'}/doctors/patients/${id}`, {
+                headers: { "Authorization": `Bearer ${token}` }
+            });
             if (detRes.ok) setPatientDetail(await detRes.json());
-            if (metRes.ok) setPatientMetrics(await metRes.json());
-            if (predRes.ok) setPatientPredictions(await predRes.json());
+
+            // Fetch optional data separately to prevent blocking
+            try {
+                const [metRes, predRes] = await Promise.all([
+                    fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1'}/doctors/patients/${id}/metrics`, {
+                        headers: { "Authorization": `Bearer ${token}` }
+                    }),
+                    fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1'}/doctors/patients/${id}/predictions`, {
+                        headers: { "Authorization": `Bearer ${token}` }
+                    })
+                ]);
+                if (metRes.ok) setPatientMetrics(await metRes.json());
+                if (predRes.ok) setPatientPredictions(await predRes.json());
+            } catch (innerErr) {
+                console.warn("Partial data load failed:", innerErr);
+            }
         } catch (err) {
             console.error("Error fetching patient detail:", err);
+            setPatientDetail(null);
         }
         setDetailLoading(false);
     }, []);
@@ -127,7 +142,7 @@ function DoctorPatientsContent() {
         setAddingPatient(true);
         const token = localStorage.getItem("token");
         try {
-            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/v1/doctors/patients`, {
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1'}/doctors/patients`, {
                 method: "POST",
                 headers: {
                     "Authorization": `Bearer ${token}`,
@@ -223,7 +238,10 @@ function DoctorPatientsContent() {
                                     The temporary password for the patient is their Date of Birth in DDMMYYYY format. They can login at /login/patient.
                                 </p>
                             </div>
-                            <button onClick={() => setNewPatientId(null)} className="btn-primary mt-6">Register Another Patient</button>
+                            <div className="flex gap-4 mt-6 justify-center">
+                                <button onClick={() => setNewPatientId(null)} className="btn-primary">Register Another Patient</button>
+                                <button onClick={() => router.push("/doctor/dashboard")} className="px-6 py-3 rounded-xl border border-slate-200 dark:border-slate-700 font-bold hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">Back to Dashboard</button>
+                            </div>
                         </div>
                     ) : (
                         <form onSubmit={handleAddPatient} className="glass-card p-10 space-y-8 shadow-2xl">
@@ -436,7 +454,8 @@ function DoctorPatientsContent() {
                                 <Loader2 className="animate-spin text-blue-600" size={48} />
                                 <p className="text-xl font-black uppercase tracking-tighter text-slate-400 italic">Synchronizing patient data...</p>
                             </div>
-                        ) : patientDetail && (
+
+                        ) : patientDetail ? (
                             <div className="flex flex-col h-full max-h-[90vh]">
                                 <div className="p-10 border-b border-slate-100 dark:border-slate-800 flex justify-between items-start bg-slate-50/50 dark:bg-slate-800/30">
                                     <div className="flex items-center gap-8">
@@ -574,11 +593,18 @@ function DoctorPatientsContent() {
                                     <button className="px-10 py-4 btn-primary font-black text-xs uppercase tracking-widest rounded-2xl shadow-blue-500/20">Initialize Consultation</button>
                                 </div>
                             </div>
+                        ) : (
+                            <div className="h-[600px] flex flex-col items-center justify-center gap-6">
+                                <AlertCircle className="text-red-500" size={48} />
+                                <p className="text-xl font-black uppercase tracking-tighter text-slate-400 italic">Patient Not Found</p>
+                                <button onClick={() => setSelectedPatientId(null)} className="btn-secondary px-8">Close</button>
+                            </div>
                         )}
                     </div>
                 </div>
             )}
-        </div>
+
+        </div >
     );
 }
 

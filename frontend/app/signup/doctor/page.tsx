@@ -35,7 +35,7 @@ export default function DoctorSignup() {
 
     const fetchHospitals = async () => {
         try {
-            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/v1/hospitals/`);
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1'}/hospitals/`);
             if (res.ok) {
                 const data = await res.json();
                 setHospitals(data);
@@ -59,15 +59,16 @@ export default function DoctorSignup() {
         };
 
         try {
-            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/v1/auth/doctor/signup`, {
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1'}/auth/doctor/signup`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(payload),
             });
 
             if (!res.ok) {
-                const data = await res.json();
-                throw new Error(data.detail || "Registration failed");
+                const errorText = await res.text();
+                console.error("Signup failed:", res.status, errorText);
+                throw new Error(`Signup failed: ${res.status} ${errorText}`);
             }
 
             router.push("/login/doctor");

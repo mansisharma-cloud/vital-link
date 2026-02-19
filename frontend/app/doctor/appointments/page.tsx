@@ -48,10 +48,10 @@ export default function DoctorAppointments() {
         const token = localStorage.getItem("token");
         try {
             const [appRes, patRes] = await Promise.all([
-                fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/v1/doctors/appointments`, {
+                fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1'}/doctors/appointments`, {
                     headers: { "Authorization": `Bearer ${token}` }
                 }),
-                fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/v1/doctors/patients`, {
+                fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1'}/doctors/patients`, {
                     headers: { "Authorization": `Bearer ${token}` }
                 })
             ]);
@@ -76,7 +76,7 @@ export default function DoctorAppointments() {
         setBookingLoading(true);
         const token = localStorage.getItem("token");
         try {
-            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/v1/doctors/appointments`, {
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1'}/doctors/appointments`, {
                 method: "POST",
                 headers: {
                     "Authorization": `Bearer ${token}`,
@@ -98,7 +98,7 @@ export default function DoctorAppointments() {
     const handleUpdateStatus = async (id: number, status: string) => {
         const token = localStorage.getItem("token");
         try {
-            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/v1/doctors/appointments/${id}?status=${status}`, {
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1'}/doctors/appointments/${id}?status=${status}`, {
                 method: "PATCH",
                 headers: { "Authorization": `Bearer ${token}` }
             });

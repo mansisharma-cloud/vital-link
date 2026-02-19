@@ -29,7 +29,7 @@ export default function PatientDashboard() {
         setLoading(true);
         const token = localStorage.getItem("token");
         try {
-            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/v1/patients/metrics`, {
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1'}/patients/metrics`, {
                 headers: { "Authorization": `Bearer ${token}` }
             });
             if (res.ok) setMetrics(await res.json());

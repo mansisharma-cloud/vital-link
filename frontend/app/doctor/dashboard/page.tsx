@@ -32,7 +32,7 @@ export default function DoctorDashboard() {
 
     const fetchDoctor = useCallback(async (token: string) => {
         try {
-            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/v1/doctors/me`, {
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1'}/doctors/me`, {
                 headers: { "Authorization": `Bearer ${token}` }
             });
             if (res.ok) setDoctor(await res.json());
@@ -45,10 +45,10 @@ export default function DoctorDashboard() {
         const token = localStorage.getItem("token");
         try {
             const [patRes, appRes] = await Promise.all([
-                fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/v1/doctors/patients?limit=10`, {
+                fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1'}/doctors/patients?limit=10`, {
                     headers: { "Authorization": `Bearer ${token}` }
                 }),
-                fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/v1/doctors/appointments`, {
+                fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1'}/doctors/appointments`, {
                     headers: { "Authorization": `Bearer ${token}` }
                 })
             ]);
@@ -85,7 +85,7 @@ export default function DoctorDashboard() {
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
                 <div>
                     <h1 className="text-4xl font-bold text-slate-800 dark:text-white mb-2">
-                        Welcome back, <span className="text-blue-600">Dr. {doctor?.full_name?.split(' ').pop() || "Medical"}</span>
+                        Welcome back, <span className="text-blue-600">Dr. {doctor?.full_name || "Medical"}</span>
                     </h1>
                     <p className="text-slate-500 font-medium">Here&apos;s what&apos;s happening at {doctor?.hospital_name || "your hospital"} today.</p>
                 </div>
@@ -134,26 +134,30 @@ export default function DoctorDashboard() {
                     <div className="glass-card p-8">
                         <div className="flex items-center justify-between mb-8">
                             <h2 className="text-2xl font-bold">Recent Patients</h2>
-                            <button className="text-blue-600 font-bold text-sm hover:underline">View All</button>
+                            <button onClick={() => window.location.href = '/doctor/patients?tab=old'} className="text-blue-600 font-bold text-sm hover:underline">View All</button>
                         </div>
 
                         <div className="overflow-x-auto">
                             <table className="w-full text-left">
                                 <thead>
                                     <tr className="border-b border-slate-100 dark:border-slate-800">
-                                        <th className="py-4 font-bold text-slate-400 uppercase text-xs tracking-widest">Patient</th>
-                                        <th className="py-4 font-bold text-slate-400 uppercase text-xs tracking-widest">ID</th>
-                                        <th className="py-4 font-bold text-slate-400 uppercase text-xs tracking-widest">Status</th>
+                                        <th className="py-4 font-bold text-slate-500 dark:text-slate-400 uppercase text-xs tracking-widest">Patient</th>
+                                        <th className="py-4 font-bold text-slate-500 dark:text-slate-400 uppercase text-xs tracking-widest">ID</th>
+                                        <th className="py-4 font-bold text-slate-500 dark:text-slate-400 uppercase text-xs tracking-widest">Status</th>
                                         <th className="py-4"></th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-slate-50 dark:divide-slate-800/50">
                                     {patients.length === 0 ? (
                                         <tr>
-                                            <td colSpan={4} className="py-20 text-center text-slate-400 italic">No recent patient records.</td>
+                                            <td colSpan={4} className="py-20 text-center text-slate-500 dark:text-slate-400 italic">No recent patient records.</td>
                                         </tr>
                                     ) : patients.map((patient) => (
-                                        <tr key={patient.id} className="group hover:bg-slate-50/50 dark:hover:bg-slate-800/20 transition-colors">
+                                        <tr
+                                            key={patient.id}
+                                            onClick={() => window.location.href = `/doctor/patients?tab=old&id=${patient.id}`}
+                                            className="group hover:bg-slate-50/50 dark:hover:bg-slate-800/20 transition-colors cursor-pointer"
+                                        >
                                             <td className="py-4">
                                                 <div className="flex items-center gap-3">
                                                     <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-600 flex items-center justify-center font-bold">
@@ -238,12 +242,12 @@ function StatCard({ title, value, icon, trend, color }: StatCardProps) {
     };
 
     return (
-        <div className="glass-card p-6 flex flex-col gap-4">
+        <div className="glass-card p-6 flex flex-col justify-between gap-4 h-full min-h-[160px]">
             <div className="flex items-center justify-between">
                 <div className={`p-3 rounded-2xl ${colorMap[color] || "bg-slate-50 text-slate-600"}`}>
                     {icon}
                 </div>
-                <div className="text-xs font-bold text-slate-400 uppercase tracking-widest">{title}</div>
+                <div className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest text-right">{title}</div>
             </div>
             <div>
                 <div className="text-3xl font-bold text-slate-800 dark:text-white mb-1">{value}</div>

@@ -175,6 +175,8 @@ async def update_appointment_status(
     return appointment
 
 
+from sqlalchemy.orm import selectinload
+
 @router.get("/patients/{patient_id}", response_model=PatientSchema)
 async def get_patient_detail(
     patient_id: int,
@@ -185,6 +187,7 @@ async def get_patient_detail(
         select(Patient)
         .where(Patient.id == patient_id)
         .where(Patient.doctor_id == current_doctor.id)
+        .options(selectinload(Patient.hospital))
     )
     patient = result.scalars().first()
     if not patient:

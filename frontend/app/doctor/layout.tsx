@@ -36,7 +36,7 @@ export default function DoctorLayout({ children }: { children: React.ReactNode }
 
     const fetchDoctorData = useCallback(async (token: string) => {
         try {
-            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/v1/doctors/me`, {
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1'}/doctors/me`, {
                 headers: { "Authorization": `Bearer ${token}` }
             });
             if (res.ok) {
@@ -122,7 +122,7 @@ export default function DoctorLayout({ children }: { children: React.ReactNode }
                             {isSidebarOpen ? <X size={24} /> : <Menu size={24} />}
                         </button>
                         <div className="hidden lg:block">
-                            <h2 className="text-sm font-bold text-slate-400 uppercase tracking-widest leading-none mb-1">Hospital</h2>
+                            <h2 className="text-sm font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest leading-none mb-1">Hospital</h2>
                             <p className="font-bold text-slate-800 dark:text-white leading-none">
                                 {doctor?.hospital_name || "Medical Center"}
                             </p>
@@ -130,7 +130,10 @@ export default function DoctorLayout({ children }: { children: React.ReactNode }
                     </div>
 
                     <div className="flex items-center gap-6">
-                        <button className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 text-slate-500 hover:text-blue-600 transition-colors relative">
+                        <button
+                            onClick={() => alert("No new notifications")}
+                            className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 text-slate-500 hover:text-blue-600 transition-colors relative"
+                        >
                             <Bell size={20} />
                             <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-white dark:border-slate-800" />
                         </button>
@@ -153,11 +156,11 @@ export default function DoctorLayout({ children }: { children: React.ReactNode }
                             {isProfileOpen && (
                                 <div className="absolute top-full right-0 mt-3 w-64 bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 p-4 animate-slide-down">
                                     <div className="flex flex-col gap-1 pb-4 mb-4 border-b border-slate-100 dark:border-slate-800">
-                                        <p className="text-xs font-bold text-slate-400 uppercase">Emergency Contact</p>
+                                        <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase">Emergency Contact</p>
                                         <p className="text-sm font-semibold">{doctor?.emergency_contact || "N/A"}</p>
                                     </div>
                                     <div className="flex flex-col gap-1 pb-4 mb-4 border-b border-slate-100 dark:border-slate-800">
-                                        <p className="text-xs font-bold text-slate-400 uppercase">Timings</p>
+                                        <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase">Timings</p>
                                         <p className="text-sm font-semibold">{doctor?.consultation_timings || "N/A"}</p>
                                     </div>
                                     <Link href="/doctor/profile" className="flex items-center gap-2 p-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 text-sm font-medium">

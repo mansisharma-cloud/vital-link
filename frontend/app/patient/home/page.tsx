@@ -35,19 +35,19 @@ export default function PatientHome() {
     const fetchData = useCallback(async (token: string) => {
         try {
             // Fetch profile
-            const profRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/v1/patients/me`, {
+            const profRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1'}/patients/me`, {
                 headers: { "Authorization": `Bearer ${token}` }
             });
             if (profRes.ok) setPatient(await profRes.json());
 
             // Fetch metrics
-            const metRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/v1/patients/metrics`, {
+            const metRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1'}/patients/metrics`, {
                 headers: { "Authorization": `Bearer ${token}` }
             });
             if (metRes.ok) setMetrics(await metRes.json());
 
             // Fetch appointments
-            const appRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/v1/patients/appointments`, {
+            const appRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1'}/patients/appointments`, {
                 headers: { "Authorization": `Bearer ${token}` }
             });
             if (appRes.ok) {

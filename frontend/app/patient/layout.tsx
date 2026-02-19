@@ -37,7 +37,7 @@ export default function PatientLayout({ children }: { children: React.ReactNode 
 
     const fetchPatientData = useCallback(async (token: string) => {
         try {
-            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/v1/patients/me`, {
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1'}/patients/me`, {
                 headers: { "Authorization": `Bearer ${token}` }
             });
             if (res.ok) {

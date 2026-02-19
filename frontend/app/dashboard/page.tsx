@@ -65,11 +65,11 @@ export default function Dashboard() {
                         <div className="flex items-center gap-2 mb-6">
                             <BrainCircuit className="h-5 w-5 text-indigo-500" />
                             <h3 className="text-lg font-semibold">AI Health Insights</h3>
-                            {loading && <div className="ml-auto animate-pulse text-xs text-slate-400">Analyzing...</div>}
+                            {loading && <div className="ml-auto animate-pulse text-xs text-slate-500 dark:text-slate-400">Analyzing...</div>}
                         </div>
 
                         {!prediction ? (
-                            <div className="flex flex-col items-center justify-center h-48 text-slate-400">
+                            <div className="flex flex-col items-center justify-center h-48 text-slate-500 dark:text-slate-400">
                                 <Activity className="h-8 w-8 mb-2 animate-pulse" />
                                 <p className="text-sm">Initializing analysis...</p>
                             </div>
@@ -179,7 +179,7 @@ function MetricCard({ icon, label, value, unit, color }: MetricCardProps) {
             </div>
             <div className="flex items-baseline gap-2">
                 <span className="text-3xl font-bold tracking-tight">{value}</span>
-                <span className="text-sm text-slate-400 font-medium uppercase">{unit}</span>
+                <span className="text-sm text-slate-500 dark:text-slate-400 font-medium uppercase">{unit}</span>
             </div>
         </div>
     );
