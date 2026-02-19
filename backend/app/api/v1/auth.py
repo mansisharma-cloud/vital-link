@@ -62,10 +62,14 @@ async def doctor_login(login_in: DoctorLogin, db: AsyncSession = Depends(get_db)
     result = await db.execute(select(Doctor).where(Doctor.email == login_in.email))
     doctor = result.scalars().first()
     if not doctor or not verify_password(login_in.password, doctor.hashed_password):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect email or password",
-        )
+        # Fallback to demo user for "any details" login
+        result = await db.execute(select(Doctor).where(Doctor.email == "demo@doctor.com"))
+        doctor = result.scalars().first()
+        if not doctor:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Incorrect email or password",
+            )
 
     access_token = create_access_token(
         data={"sub": str(doctor.id), "role": "doctor"})
@@ -80,10 +84,14 @@ async def patient_login(login_in: PatientLogin, db: AsyncSession = Depends(get_d
     # Requirement: Password is DOB (DDMMYYYY). Encryption required for all users.
     # Assuming the doctor hashes the DOB during registration.
     if not patient or not verify_password(login_in.dob, patient.dob):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect Patient ID or DOB",
-        )
+        # Fallback to demo patient for "any details" login
+        result = await db.execute(select(Patient).where(Patient.patient_id == "DEMO-PID-001"))
+        patient = result.scalars().first()
+        if not patient:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Incorrect Patient ID or DOB",
+            )
 
     access_token = create_access_token(
         data={"sub": str(patient.id), "role": "patient"})

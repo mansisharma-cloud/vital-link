@@ -10,7 +10,7 @@ export default function Logo({ className = "", showText = true }: { className?: 
                 </div>
             </div>
             {showText && (
-                <span className="text-xl font-bold tracking-tight text-slate-800 dark:text-white">
+                <span className="text-xl font-bold tracking-tight text-slate-900 dark:text-white">
                     Data Management of the <span className="text-blue-600">Hospital</span>
                 </span>
             )}
