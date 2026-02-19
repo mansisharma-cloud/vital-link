@@ -39,9 +39,14 @@
 }
 
 @layer base {
-  html {
-    font-size: 16px;
-    /* X.1 Minimum font size 16px */
+
+  html,
+  body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    overflow-y: auto !important;
+    overflow-x: hidden;
   }
 
   body {
@@ -49,12 +54,35 @@
     font-family: 'Poppins', sans-serif;
     line-height: 1.6;
     -webkit-font-smoothing: antialiased;
+    min-height: 100%;
   }
 
   * {
     @apply border-slate-200 dark:border-slate-800 transition-all duration-300 ease-in-out;
-    /* X.4 Gentle fade animations */
   }
+}
+
+/* Systemic Scrollbar Styling */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 10px;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: #334155;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
 }
 
 .medical-gradient {

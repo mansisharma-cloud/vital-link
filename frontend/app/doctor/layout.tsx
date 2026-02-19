@@ -77,9 +77,9 @@ export default function DoctorLayout({ children }: { children: React.ReactNode }
     ];
 
     return (
-        <div className="min-h-screen bg-[var(--background)] flex">
+        <div className="h-screen bg-[var(--background)] flex overflow-hidden">
             {/* Sidebar */}
-            <aside className={`fixed inset-y-0 left-0 z-50 w-64 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 transition-transform duration-300 transform ${isSidebarOpen ? "translate-x-0" : "-translate-x-full"} lg:translate-x-0 lg:static overflow-y-auto`}>
+            <aside className={`fixed inset-y-0 left-0 z-50 w-64 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 transition-transform duration-300 transform ${isSidebarOpen ? "translate-x-0" : "-translate-x-full"} lg:translate-x-0 lg:static overflow-y-auto flex-shrink-0`}>
                 <div className="h-full flex flex-col p-6">
                     <Logo className="mb-10 shrink-0" showText={false} />
 
@@ -111,7 +111,7 @@ export default function DoctorLayout({ children }: { children: React.ReactNode }
             </aside>
 
             {/* Main Content */}
-            <div className="flex-1 flex flex-col min-w-0">
+            <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
                 {/* Header */}
                 <header className="h-20 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-bottom border-slate-200 dark:border-slate-800 px-8 flex items-center justify-between sticky top-0 z-40">
                     <div className="flex items-center gap-4">

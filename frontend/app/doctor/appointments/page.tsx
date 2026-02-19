@@ -218,90 +218,92 @@ export default function DoctorAppointments() {
 
             {/* Booking Modal */}
             {showBookingForm && (
-                <div className="fixed inset-0 z-[100] flex flex-col items-center justify-start p-4 md:p-12 bg-slate-950/60 backdrop-blur-sm animate-fade-in overflow-y-auto">
-                    <div className="w-full max-w-2xl bg-white dark:bg-slate-900 rounded-[2.5rem] shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden animate-slide-up my-auto">
-                        <div className="p-10 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50/50 dark:bg-slate-800/30">
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-8 bg-slate-950/60 backdrop-blur-sm animate-fade-in overflow-y-auto">
+                    <div className="w-full max-w-2xl bg-white dark:bg-slate-900 rounded-[2.5rem] shadow-2xl border border-slate-200 dark:border-slate-800 animate-slide-up flex flex-col max-h-full">
+                        <div className="p-8 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50/50 dark:bg-slate-800/30 flex-shrink-0">
                             <div>
                                 <h2 className="text-2xl font-black uppercase tracking-tighter">Book Consultation</h2>
-                                <p className="text-slate-500 text-sm mt-1">Initialize a new patient visit record.</p>
+                                <p className="text-slate-500 text-sm mt-1 font-medium">Initialize a new patient visit record.</p>
                             </div>
                             <button onClick={() => setShowBookingForm(false)} className="p-3 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-2xl text-slate-400 hover:text-red-500 transition-all">
                                 <XCircle size={28} />
                             </button>
                         </div>
 
-                        <form onSubmit={handleBookAppointment} className="p-10 space-y-8">
-                            <div className="grid md:grid-cols-2 gap-8">
-                                <div className="space-y-6 md:col-span-2">
-                                    <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest pl-1">Select Patient</label>
-                                    <div className="relative">
-                                        <User className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                                        <select
-                                            required
-                                            value={formData.patient_id}
-                                            onChange={(e) => setFormData({ ...formData, patient_id: e.target.value })}
-                                            className="w-full pl-12 pr-4 py-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border-none focus:ring-2 focus:ring-blue-500 outline-none appearance-none font-bold text-slate-800 dark:text-white"
-                                        >
-                                            <option value="">-- Choose patient from records --</option>
-                                            {patients.map(p => (
-                                                <option key={p.id} value={p.id}>{p.full_name} ({p.patient_id})</option>
-                                            ))}
-                                        </select>
+                        <div className="flex-1 overflow-y-auto p-8 lg:p-10">
+                            <form onSubmit={handleBookAppointment} className="space-y-8 pb-4">
+                                <div className="grid md:grid-cols-2 gap-8">
+                                    <div className="space-y-4 md:col-span-2">
+                                        <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Select Patient</label>
+                                        <div className="relative">
+                                            <User className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                                            <select
+                                                required
+                                                value={formData.patient_id}
+                                                onChange={(e) => setFormData({ ...formData, patient_id: e.target.value })}
+                                                className="w-full pl-12 pr-4 py-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border-none focus:ring-2 focus:ring-blue-500 outline-none appearance-none font-bold text-slate-800 dark:text-white"
+                                            >
+                                                <option value="">-- Choose patient from records --</option>
+                                                {patients.map(p => (
+                                                    <option key={p.id} value={p.id}>{p.full_name} ({p.patient_id})</option>
+                                                ))}
+                                            </select>
+                                        </div>
                                     </div>
-                                </div>
 
-                                <div className="space-y-6">
-                                    <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest pl-1">Visit Date</label>
-                                    <div className="relative">
-                                        <CalendarIcon className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                                        <input
-                                            type="date"
+                                    <div className="space-y-4">
+                                        <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Visit Date</label>
+                                        <div className="relative">
+                                            <CalendarIcon className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                                            <input
+                                                type="date"
+                                                required
+                                                value={formData.date}
+                                                onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+                                                className="w-full pl-12 pr-4 py-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border-none focus:ring-2 focus:ring-blue-500 outline-none font-bold"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div className="space-y-4">
+                                        <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Preferred Time</label>
+                                        <div className="relative">
+                                            <Clock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                                            <input
+                                                type="time"
+                                                required
+                                                value={formData.time}
+                                                onChange={(e) => setFormData({ ...formData, time: e.target.value })}
+                                                className="w-full pl-12 pr-4 py-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border-none focus:ring-2 focus:ring-blue-500 outline-none font-bold"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div className="md:col-span-2 space-y-4">
+                                        <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Reason for Visit</label>
+                                        <textarea
                                             required
-                                            value={formData.date}
-                                            onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                                            className="w-full pl-12 pr-4 py-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border-none focus:ring-2 focus:ring-blue-500 outline-none font-bold"
+                                            rows={4}
+                                            value={formData.reason}
+                                            onChange={(e) => setFormData({ ...formData, reason: e.target.value })}
+                                            placeholder="Briefly describe the clinical reason..."
+                                            className="w-full px-5 py-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border-none focus:ring-2 focus:ring-blue-500 outline-none font-medium resize-none shadow-inner min-h-[120px]"
                                         />
                                     </div>
                                 </div>
 
-                                <div className="space-y-6">
-                                    <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest pl-1">Preferred Time</label>
-                                    <div className="relative">
-                                        <Clock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                                        <input
-                                            type="time"
-                                            required
-                                            value={formData.time}
-                                            onChange={(e) => setFormData({ ...formData, time: e.target.value })}
-                                            className="w-full pl-12 pr-4 py-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border-none focus:ring-2 focus:ring-blue-500 outline-none font-bold"
-                                        />
-                                    </div>
+                                <div className="pt-6 flex gap-4 sticky bottom-0 bg-white dark:bg-slate-900 pb-2">
+                                    <button type="button" onClick={() => setShowBookingForm(false)} className="flex-1 py-4 btn-secondary rounded-2xl font-bold uppercase tracking-widest text-[10px]">Cancel</button>
+                                    <button
+                                        type="submit"
+                                        disabled={bookingLoading}
+                                        className="flex-[2] py-4 btn-primary rounded-2xl font-bold flex items-center justify-center gap-3 uppercase tracking-widest text-[10px]"
+                                    >
+                                        {bookingLoading ? <Loader2 className="animate-spin" /> : "Confirm Reservation"}
+                                    </button>
                                 </div>
-
-                                <div className="md:col-span-2 space-y-6">
-                                    <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest pl-1">Reason for Visit</label>
-                                    <textarea
-                                        required
-                                        rows={3}
-                                        value={formData.reason}
-                                        onChange={(e) => setFormData({ ...formData, reason: e.target.value })}
-                                        placeholder="Briefly describe the clinical reason..."
-                                        className="w-full px-5 py-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border-none focus:ring-2 focus:ring-blue-500 outline-none font-medium resize-none"
-                                    />
-                                </div>
-                            </div>
-
-                            <div className="pt-6 flex gap-4">
-                                <button type="button" onClick={() => setShowBookingForm(false)} className="flex-1 py-4 btn-secondary rounded-2xl font-bold">Cancel</button>
-                                <button
-                                    type="submit"
-                                    disabled={bookingLoading}
-                                    className="flex-[2] py-4 btn-primary rounded-2xl font-bold flex items-center justify-center gap-3"
-                                >
-                                    {bookingLoading ? <Loader2 className="animate-spin" /> : "Confirm Reservation"}
-                                </button>
-                            </div>
-                        </form>
+                            </form>
+                        </div>
                     </div>
                 </div>
             )}

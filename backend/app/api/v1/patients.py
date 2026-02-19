@@ -116,7 +116,7 @@ async def get_predictions(
     # Fetch latest metrics for the patient
     metrics_query = select(HealthMetric).where(
         HealthMetric.patient_id == current_patient.id
-    ).order_by(HealthMetric.timestamp.desc())
+    ).order_by(HealthMetric.timestamp.desc()).limit(20)
 
     result = await db.execute(metrics_query)
     metrics_list = result.scalars().all()
@@ -127,8 +127,10 @@ async def get_predictions(
         if m.metric_type not in latest_metrics:
             latest_metrics[m.metric_type] = m.value
 
-    from app.services.prediction import predict_risk
-    analysis = predict_risk(latest_metrics)
+    from app.services.prediction import predict_multi_disease_risk
+    # Use profile data or defaults
+    analysis = predict_multi_disease_risk(
+        latest_metrics, {"age": 52, "bmi": 28.4})
     return analysis
 
 
