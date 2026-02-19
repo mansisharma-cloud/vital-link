@@ -116,21 +116,20 @@ function DoctorPatientsContent() {
 
     useEffect(() => {
         if (patientIdParam) {
-            const id = parseInt(patientIdParam);
-            const loadParam = async () => {
-                setSelectedPatientId(id);
-            };
-            loadParam();
+            setSelectedPatientId(parseInt(patientIdParam));
+        } else {
+            setSelectedPatientId(null);
+            setPatientDetail(null);
         }
     }, [patientIdParam]);
 
     useEffect(() => {
-        if (selectedPatientId) {
+        if (selectedPatientId !== null) {
             const load = async () => {
                 await fetchPatientDetail(selectedPatientId);
             };
             load();
-            const interval = setInterval(load, 5000);
+            const interval = setInterval(load, 10000);
             return () => clearInterval(interval);
         }
     }, [selectedPatientId, fetchPatientDetail]);
@@ -404,8 +403,8 @@ function DoctorPatientsContent() {
                                             <td className="px-8 py-5 text-slate-500 font-bold text-sm tracking-tight">{patient.contact_number}</td>
                                             <td className="px-8 py-5 text-right">
                                                 <button
-                                                    onClick={() => setSelectedPatientId(patient.id)}
-                                                    className="px-6 py-2.5 bg-slate-900 text-white dark:bg-white dark:text-slate-900 rounded-xl font-black text-xs uppercase tracking-widest hover:scale-105 transition-all shadow-md"
+                                                    onClick={() => router.push(`?tab=old&id=${patient.id}`)}
+                                                    className="px-6 py-2.5 bg-slate-900 text-white dark:bg-white dark:text-slate-900 rounded-xl font-black text-xs uppercase tracking-widest hover:scale-105 transition-all shadow-md group-hover:bg-blue-600 group-hover:text-white"
                                                 >
                                                     View Details
                                                 </button>
@@ -441,7 +440,7 @@ function DoctorPatientsContent() {
             )}
 
             {/* Patient Detail Modal */}
-            {selectedPatientId && (
+            {selectedPatientId !== null && (
                 <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center p-4 md:p-8 bg-slate-950/60 backdrop-blur-md animate-fade-in overflow-y-auto">
                     <div className="w-full max-w-5xl bg-white dark:bg-slate-900 rounded-[2.5rem] md:rounded-[4rem] shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden animate-slide-up flex flex-col max-h-[90vh] my-auto">
                         {detailLoading ? (
@@ -466,7 +465,7 @@ function DoctorPatientsContent() {
                                         </div>
                                     </div>
                                     <button
-                                        onClick={() => setSelectedPatientId(null)}
+                                        onClick={() => router.push('?tab=old')}
                                         className="p-4 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-3xl text-slate-400 hover:text-red-500 transition-all"
                                     >
                                         <X size={28} />
