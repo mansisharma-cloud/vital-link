@@ -442,15 +442,15 @@ function DoctorPatientsContent() {
 
             {/* Patient Detail Modal */}
             {selectedPatientId && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-slate-950/60 backdrop-blur-md animate-fade-in overflow-y-auto">
-                    <div className="w-full max-w-5xl bg-white dark:bg-slate-900 rounded-[3rem] shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden animate-slide-up">
+                <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center p-4 md:p-8 bg-slate-950/60 backdrop-blur-md animate-fade-in overflow-y-auto">
+                    <div className="w-full max-w-5xl bg-white dark:bg-slate-900 rounded-[2.5rem] md:rounded-[4rem] shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden animate-slide-up flex flex-col max-h-[90vh] my-auto">
                         {detailLoading ? (
                             <div className="h-[600px] flex flex-col items-center justify-center gap-6">
                                 <Loader2 className="animate-spin text-blue-600" size={48} />
                                 <p className="text-xl font-black uppercase tracking-tighter text-slate-400 italic">Synchronizing patient data...</p>
                             </div>
                         ) : patientDetail && (
-                            <div className="flex flex-col h-full max-h-[90vh]">
+                            <div className="flex flex-col flex-1 min-h-0">
                                 <div className="p-10 border-b border-slate-100 dark:border-slate-800 flex justify-between items-start bg-slate-50/50 dark:bg-slate-800/30">
                                     <div className="flex items-center gap-8">
                                         <div className="w-24 h-24 rounded-[2rem] bg-blue-600 text-white flex items-center justify-center text-4xl font-black shadow-2xl">
@@ -517,7 +517,7 @@ function DoctorPatientsContent() {
                                                 <h4 className="text-lg font-black uppercase tracking-tighter mb-6 flex items-center gap-2">
                                                     <BrainCircuit size={20} className="text-emerald-500" /> AI Risk Assessment
                                                 </h4>
-                                                <div className="space-y-4 flex-1">
+                                                <div className="space-y-4 flex-1 overflow-y-auto pr-2 max-h-[400px]">
                                                     {patientPredictions && patientPredictions.predictions?.length > 0 ? (
                                                         patientPredictions.predictions.map((p, idx) => (
                                                             <div key={idx} className="p-4 bg-slate-50 dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700">

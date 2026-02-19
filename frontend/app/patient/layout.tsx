@@ -81,9 +81,9 @@ export default function PatientLayout({ children }: { children: React.ReactNode 
     return (
         <div className="min-h-screen bg-[var(--background)] flex">
             {/* Sidebar */}
-            <aside className={`fixed inset-y-0 left-0 z-50 w-64 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 transition-transform duration-300 transform ${isSidebarOpen ? "translate-x-0" : "-translate-x-full"} lg:translate-x-0 lg:static`}>
+            <aside className={`fixed inset-y-0 left-0 z-50 w-64 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 transition-transform duration-300 transform ${isSidebarOpen ? "translate-x-0" : "-translate-x-full"} lg:translate-x-0 lg:static overflow-y-auto`}>
                 <div className="h-full flex flex-col p-6">
-                    <Logo className="mb-10" showText={false} />
+                    <Logo className="mb-10 shrink-0" showText={false} />
 
                     <nav className="flex-1 space-y-2">
                         {navItems.map((item) => (
