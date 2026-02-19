@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
+from sqlalchemy.orm import selectinload
 from typing import List
 from app.db.session import get_db
 from app.api.deps import get_current_patient
@@ -63,8 +64,15 @@ async def list_appointments(
     db: AsyncSession = Depends(get_db),
     current_patient: Patient = Depends(get_current_patient)
 ):
-    result = await db.execute(select(Appointment).where(Appointment.patient_id == current_patient.id))
-    return result.scalars().all()
+    result = await db.execute(
+        select(Appointment)
+        .where(Appointment.patient_id == current_patient.id)
+        .options(selectinload(Appointment.doctor))
+    )
+    appointments = result.scalars().all()
+    for app in appointments:
+        app.doctor_name = app.doctor.full_name
+    return appointments
 
 
 @router.get("/metrics", response_model=List[HealthMetricSchema])
@@ -72,7 +80,12 @@ async def list_metrics(
     db: AsyncSession = Depends(get_db),
     current_patient: Patient = Depends(get_current_patient)
 ):
-    result = await db.execute(select(HealthMetric).where(HealthMetric.patient_id == current_patient.id))
+    result = await db.execute(
+        select(HealthMetric)
+        .where(HealthMetric.patient_id == current_patient.id)
+        .order_by(HealthMetric.timestamp.desc())
+        .limit(100)
+    )
     return result.scalars().all()
 
 

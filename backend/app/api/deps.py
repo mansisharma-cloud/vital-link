@@ -10,6 +10,7 @@ from app.db.session import get_db
 from app.models.doctor import Doctor
 from app.models.patient import Patient
 from app.schemas.user import TokenPayload
+from app.models.user import User
 from sqlalchemy import select
 
 reusable_oauth2 = OAuth2PasswordBearer(
@@ -100,3 +101,15 @@ async def get_current_user_optional(
         return None
 
     return result.scalars().first()
+
+
+async def get_current_user(
+    db: AsyncSession = Depends(get_db),
+    auth_data: dict = Depends(get_current_user_data)
+) -> User:
+    from app.models.user import User
+    result = await db.execute(select(User).filter(User.id == auth_data["id"]))
+    user = result.scalars().first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    return user
