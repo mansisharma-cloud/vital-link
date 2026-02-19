@@ -32,13 +32,32 @@ interface Prediction {
     condition: string;
     risk_level: string;
     score: number;
+    trend: string;
+    time_to_event: string;
+    confidence: number;
+    key_indicators: string[];
+    status_text: string;
 }
 
 interface PredictionSummary {
     predictions: Prediction[];
-    overall_status: string;
+    timeline: any[];
     summary: string;
+    comorbidities: string[];
+    recommendations: {
+        immediate: string[];
+        short_term: string[];
+    };
+    data_quality: {
+        monitoring_coverage: number;
+        lab_accuracy: number;
+        manual_entry: number;
+    };
+    overall_status: string;
 }
+
+import AIPredictionsDashboard from "@/components/AIPredictionsDashboard";
+import PatientDashboardView from "@/components/PatientDashboardView";
 
 interface Appointment {
     id: number;
@@ -74,12 +93,12 @@ export default function PatientDetailPage() {
             const patientData = await detRes.json();
             setPatient(patientData);
 
-            // 2. Fetch metrics and predictions using the internal ID
+            // 2. Fetch metrics and predictions using the clinical ID for predictions
             const [metRes, predRes, appRes] = await Promise.all([
                 fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1'}/doctors/patients/${patientData.id}/metrics`, {
                     headers: { "Authorization": `Bearer ${token}` }
                 }),
-                fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1'}/doctors/patients/${patientData.id}/predictions`, {
+                fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1'}/predictions/patient/${encodeURIComponent(clinicalId)}/all`, {
                     headers: { "Authorization": `Bearer ${token}` }
                 }),
                 fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1'}/doctors/appointments`, {
@@ -88,10 +107,12 @@ export default function PatientDetailPage() {
             ]);
 
             if (metRes.ok) setMetrics(await metRes.json());
-            if (predRes.ok) setPredictions(await predRes.json());
+            if (predRes.ok) {
+                const pData = await predRes.json();
+                setPredictions(pData);
+            }
             if (appRes.ok) {
                 const allApps = await appRes.json();
-                // Filter appointments for this patient
                 setAppointments(allApps.filter((a: any) => a.patient_id === patientData.id));
             }
         } catch (err: any) {
@@ -104,14 +125,14 @@ export default function PatientDetailPage() {
 
     useEffect(() => {
         fetchAllData();
-        const interval = setInterval(fetchAllData, 30000);
+        const interval = setInterval(fetchAllData, 15000);
         return () => clearInterval(interval);
     }, [fetchAllData]);
 
     if (loading) {
         return (
             <div className="min-h-screen flex flex-col items-center justify-center gap-6 bg-slate-50 dark:bg-slate-950">
-                <Loader2 className="animate-spin text-blue-600" size={48} />
+                <Loader2 className="animate-spin text-indigo-600" size={48} />
                 <p className="text-xl font-black uppercase tracking-tighter text-slate-400 italic">Syncing Clinical Dossier...</p>
             </div>
         );
@@ -135,176 +156,142 @@ export default function PatientDetailPage() {
         );
     }
 
-    const getLatestMetric = (type: string) => {
-        const metric = metrics
-            .filter(m => m.metric_type.toLowerCase() === type.toLowerCase())
-            .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())[0];
-        return metric ? metric.value : "N/A";
-    };
-
     return (
-        <div className="max-w-7xl mx-auto space-y-10 animate-fade-in pb-20">
+        <div className="max-w-7xl mx-auto space-y-12 animate-fade-in pb-32">
             {/* Header / Breadcrumb */}
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between pt-8">
                 <button
                     onClick={() => router.push('/doctor/patients')}
-                    className="flex items-center gap-2 text-sm font-black text-slate-400 hover:text-blue-600 transition-colors uppercase tracking-widest"
+                    className="flex items-center gap-2 text-sm font-black text-slate-400 hover:text-indigo-600 transition-colors uppercase tracking-widest"
                 >
                     <ChevronLeft size={18} /> Back to Registry
                 </button>
                 <div className="flex gap-4">
-                    <button className="px-6 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl font-black text-xs uppercase tracking-widest flex items-center gap-2 hover:bg-slate-50 transition-all shadow-sm">
-                        <Edit3 size={16} /> Edit Profile
+                    <button className="px-6 py-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center gap-2 hover:border-indigo-500/50 transition-all shadow-sm">
+                        <Edit3 size={14} /> Update EHR
                     </button>
                     <button
                         onClick={() => router.push('/doctor/appointments')}
-                        className="px-6 py-2.5 bg-blue-600 text-white rounded-xl font-black text-xs uppercase tracking-widest flex items-center gap-2 hover:bg-blue-500 transition-all shadow-lg shadow-blue-500/20"
+                        className="px-6 py-3 bg-indigo-600 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center gap-2 hover:bg-indigo-500 transition-all shadow-lg shadow-indigo-500/20"
                     >
-                        <Calendar size={16} /> Schedule Visit
+                        <Calendar size={14} /> Schedule Visit
                     </button>
                 </div>
             </div>
 
             {/* Profile Overview Card */}
-            <div className="glass-card p-10 bg-slate-900 text-white relative overflow-hidden border-none shadow-2xl">
-                <div className="absolute top-0 right-0 p-10 opacity-10 pointer-events-none">
-                    <User size={200} strokeWidth={1} />
+            <div className="glass-card p-12 bg-slate-950 text-white relative overflow-hidden border-none shadow-2xl">
+                <div className="absolute top-0 right-0 p-12 opacity-10 pointer-events-none">
+                    <User size={240} strokeWidth={1} />
                 </div>
-                <div className="relative z-10 flex flex-col md:flex-row items-center gap-10">
-                    <div className="w-32 h-32 rounded-[3rem] bg-blue-600 text-white flex items-center justify-center text-5xl font-black shadow-2xl border-4 border-white/10">
+                <div className="relative z-10 flex flex-col md:flex-row items-center gap-12">
+                    <div className="w-40 h-40 rounded-[4rem] bg-indigo-600 text-white flex items-center justify-center text-6xl font-black shadow-2xl border-4 border-white/10 shrink-0">
                         {patient.full_name.charAt(0)}
                     </div>
-                    <div className="space-y-4 text-center md:text-left flex-1">
+                    <div className="space-y-6 text-center md:text-left flex-1">
                         <div>
-                            <h1 className="text-5xl font-black uppercase tracking-tighter leading-none mb-2">{patient.full_name}</h1>
-                            <div className="flex items-center justify-center md:justify-start gap-4">
-                                <span className="px-3 py-1 bg-white/10 rounded-lg text-xs font-black uppercase tracking-widest text-blue-300">ID: {patient.patient_id}</span>
-                                <span className="w-1 h-1 bg-white/20 rounded-full" />
-                                <span className="text-slate-400 uppercase font-black text-xs tracking-widest">{patient.gender} • {patient.dob}</span>
+                            <h1 className="text-6xl font-black uppercase tracking-tighter leading-none mb-3">{patient.full_name}</h1>
+                            <div className="flex items-center justify-center md:justify-start gap-6">
+                                <span className="px-4 py-1.5 bg-white/10 rounded-xl text-xs font-black uppercase tracking-widest text-indigo-300 border border-white/5">Clinical ID: {patient.patient_id}</span>
+                                <span className="w-1.5 h-1.5 bg-white/20 rounded-full" />
+                                <span className="text-slate-400 uppercase font-black text-xs tracking-[0.2em]">{patient.gender} • DOB {patient.dob}</span>
                             </div>
                         </div>
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-6 pt-4 border-t border-white/10">
-                            <InfoItem label="Contact" value={patient.contact_number} />
-                            <InfoItem label="Blood Type" value={patient.blood_group || "O+"} />
-                            <InfoItem label="Status" value={predictions?.overall_status || "Optimal"} highlight />
-                            <InfoItem label="Emergency" value={patient.emergency_contact} />
+                        <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 pt-6 border-t border-white/10">
+                            <InfoItem label="Primary Contact" value={patient.contact_number} />
+                            <InfoItem label="Blood Index" value={patient.blood_group || "O+"} />
+                            <InfoItem label="Risk Status" value={predictions?.overall_status || "Stabilizing"} highlight />
+                            <InfoItem label="E-Contact" value={patient.emergency_contact} />
                         </div>
                     </div>
                 </div>
             </div>
 
+            {/* Patient View Section (Telemetry) */}
+            <section className="space-y-8">
+                <div className="flex items-center gap-4">
+                    <h2 className="text-2xl font-black uppercase tracking-tighter">Patient Dashboard Overview</h2>
+                    <div className="flex-1 h-px bg-slate-200 dark:bg-slate-800" />
+                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest italic">Syncing Live</span>
+                </div>
+                <PatientDashboardView metrics={metrics} />
+            </section>
+
+            {/* AI Prediction Section */}
+            <section className="space-y-8">
+                <AIPredictionsDashboard data={predictions} />
+            </section>
+
+            {/* Doctor Workflow Extensions */}
             <div className="grid lg:grid-cols-12 gap-10">
-                {/* Left Column: Diagnostics & AI */}
                 <div className="lg:col-span-8 space-y-10">
-                    {/* Live Telemetry Grid */}
-                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                        <MetricCard label="Heart Rate" value={getLatestMetric('heart_rate')} unit="BPM" icon={<Activity className="text-rose-500" />} />
-                        <MetricCard label="Blood Glucose" value={getLatestMetric('glucose')} unit="mg/dL" icon={<Droplet className="text-blue-500" />} />
-                        <MetricCard label="Oxygen Sat" value={getLatestMetric('spo2')} unit="%" icon={<Activity className="text-emerald-500" />} />
-                        <MetricCard label="Stress Index" value={getLatestMetric('stress_level')} unit="%" icon={<TrendingUp className="text-amber-500" />} />
-                    </div>
-
-                    {/* AI Risk Assessment */}
-                    <div className="glass-card p-10">
-                        <h3 className="text-xl font-black uppercase tracking-tighter mb-8 flex items-center gap-3">
-                            <BrainCircuit size={24} className="text-indigo-600" /> AI Diagnostic Prognosis
-                        </h3>
-                        <div className="grid md:grid-cols-2 gap-8">
-                            <div className="space-y-4">
-                                {predictions && predictions.predictions.length > 0 ? (
-                                    predictions.predictions.map((p, idx) => (
-                                        <div key={idx} className="p-6 bg-slate-50 dark:bg-slate-800/50 rounded-[2rem] border border-slate-100 dark:border-slate-800">
-                                            <div className="flex justify-between items-center mb-3">
-                                                <span className="text-xs font-black uppercase tracking-widest">{p.condition}</span>
-                                                <span className={`text-[10px] font-black px-3 py-1 rounded-full uppercase ${p.risk_level === 'High' ? 'bg-rose-100 text-rose-600' : 'bg-emerald-100 text-emerald-600'}`}>
-                                                    {p.risk_level} Risk
-                                                </span>
-                                            </div>
-                                            <div className="flex items-center gap-4">
-                                                <div className="flex-1 h-2 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
-                                                    <div className="h-full bg-blue-600 rounded-full" style={{ width: `${p.score}%` }} />
-                                                </div>
-                                                <span className="text-xs font-black text-slate-500">{p.score}%</span>
-                                            </div>
-                                        </div>
-                                    ))
-                                ) : (
-                                    <div className="h-full flex flex-col items-center justify-center text-center p-10 bg-slate-50 dark:bg-slate-800 rounded-[2.5rem] border border-dashed border-slate-200 dark:border-slate-700">
-                                        <Sparkles className="text-emerald-400 mb-4" size={40} />
-                                        <p className="font-bold text-slate-400 italic">No critical anomalies detected by clinical AI models.</p>
-                                    </div>
-                                )}
-                            </div>
-                            <div className="bg-slate-50 dark:bg-slate-800/30 p-8 rounded-[2rem] flex flex-col gap-6">
-                                <h4 className="text-sm font-black uppercase tracking-widest text-slate-400">Clinical Summary</h4>
-                                <p className="text-slate-600 dark:text-slate-400 leading-relaxed font-medium italic border-l-4 border-indigo-500/30 pl-6">
-                                    "{predictions?.summary || "Patient telemetry indicates stable baseline performance with zero significant deviations noted in the current monitoring cycle."}"
-                                </p>
-                                <div className="mt-auto pt-6 border-t border-slate-200 dark:border-slate-700 flex items-center justify-between">
-                                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Model Confidence: 98.2%</span>
-                                    <button className="text-blue-600 font-black text-[10px] uppercase tracking-widest hover:underline">Full Report</button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Telemetry History Table */}
+                    {/* History Table */}
                     <div className="glass-card overflow-hidden">
-                        <div className="p-8 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-800/10">
-                            <h3 className="text-lg font-black uppercase tracking-tighter">Health Telemetry Logs</h3>
-                            <button className="text-[10px] font-black text-blue-600 uppercase tracking-widest">Download History</button>
+                        <div className="p-10 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-800/10">
+                            <div className="flex items-center gap-4">
+                                <div className="p-3 bg-indigo-600 rounded-xl text-white">
+                                    <Activity size={20} />
+                                </div>
+                                <h3 className="text-xl font-black uppercase tracking-tighter">Clinical Telemetry Stream</h3>
+                            </div>
+                            <button className="text-[10px] font-black text-indigo-600 uppercase tracking-widest bg-indigo-50 px-4 py-2 rounded-xl border border-indigo-100">Export clinical data</button>
                         </div>
                         <div className="overflow-x-auto">
                             <table className="w-full text-left">
-                                <thead className="bg-slate-50/80 dark:bg-slate-800/20">
+                                <thead className="bg-slate-50/80 dark:bg-slate-800/20 text-slate-400">
                                     <tr>
-                                        <th className="px-8 py-4 text-[10px] font-black uppercase tracking-widest">Timestamp</th>
-                                        <th className="px-8 py-4 text-[10px] font-black uppercase tracking-widest">Type</th>
-                                        <th className="px-8 py-4 text-[10px] font-black uppercase tracking-widest text-center">Value</th>
-                                        <th className="px-8 py-4 text-[10px] font-black uppercase tracking-widest text-right">Status</th>
+                                        <th className="px-10 py-5 text-[10px] font-black uppercase tracking-widest">Temporal marker</th>
+                                        <th className="px-10 py-5 text-[10px] font-black uppercase tracking-widest">Biometric indicator</th>
+                                        <th className="px-10 py-5 text-[10px] font-black uppercase tracking-widest text-center">Observed Value</th>
+                                        <th className="px-10 py-5 text-[10px] font-black uppercase tracking-widest text-right">Interpretation</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-slate-50 dark:divide-slate-800/50">
-                                    {metrics.slice(0, 10).map(m => (
-                                        <tr key={m.id} className="hover:bg-slate-50/30 dark:hover:bg-slate-800/20 transition-colors">
-                                            <td className="px-8 py-4 font-mono text-[10px] text-slate-400">{new Date(m.timestamp).toLocaleString()}</td>
-                                            <td className="px-8 py-4 font-black text-xs uppercase tracking-tight">{m.metric_type.replace('_', ' ')}</td>
-                                            <td className="px-8 py-4 text-center">
-                                                <span className="text-sm font-black text-blue-600">{m.value}</span>
+                                    {metrics.map(m => (
+                                        <tr key={m.id} className="hover:bg-slate-50/30 dark:hover:bg-slate-800/20 transition-colors group">
+                                            <td className="px-10 py-5 font-mono text-[10px] text-slate-400">{new Date(m.timestamp).toLocaleString()}</td>
+                                            <td className="px-10 py-5 font-black text-xs uppercase tracking-tight text-slate-600 dark:text-slate-300">{m.metric_type.replace('_', ' ')}</td>
+                                            <td className="px-10 py-5 text-center">
+                                                <span className="text-sm font-black text-indigo-600 group-hover:scale-110 transition-transform inline-block">{m.value}</span>
                                             </td>
-                                            <td className="px-8 py-4 text-right">
-                                                <span className="px-2 py-0.5 bg-emerald-100 text-emerald-600 rounded text-[9px] font-black uppercase tracking-widest">Normal</span>
+                                            <td className="px-10 py-5 text-right">
+                                                <span className="px-4 py-1 bg-emerald-100 text-emerald-600 rounded-lg text-[9px] font-black uppercase tracking-widest">Optimal Baseline</span>
                                             </td>
                                         </tr>
                                     ))}
                                 </tbody>
                             </table>
+                            {metrics.length === 0 && (
+                                <div className="p-20 text-center opacity-30">
+                                    <Sparkles size={48} className="mx-auto mb-4" />
+                                    <p className="font-black uppercase tracking-widest text-xs italic">Waiting for telemetry uplink...</p>
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>
 
-                {/* Right Column: Appointments & metadata */}
                 <div className="lg:col-span-4 space-y-10">
-                    {/* Scheduled Appointments */}
-                    <div className="glass-card p-10 border-t-8 border-blue-600">
-                        <h3 className="text-xl font-black uppercase tracking-tighter mb-8 flex items-center gap-3">
-                            <Calendar size={20} className="text-blue-600" /> Upcoming Visits
+                    {/* Visits */}
+                    <div className="glass-card p-10 border-t-8 border-indigo-600">
+                        <h3 className="text-xl font-black uppercase tracking-tighter mb-8 flex items-center gap-4">
+                            <Calendar size={22} className="text-indigo-600" /> Clinical Engagements
                         </h3>
                         <div className="space-y-6">
                             {appointments.length > 0 ? (
                                 appointments.map(app => (
-                                    <div key={app.id} className="group p-6 bg-slate-50 dark:bg-slate-800/50 rounded-3xl border border-slate-100 dark:border-slate-800">
+                                    <div key={app.id} className="group p-6 bg-slate-50 dark:bg-slate-800/50 rounded-[2rem] border border-slate-100 dark:border-slate-800 hover:border-indigo-500/30 transition-all cursor-pointer">
                                         <div className="flex justify-between items-start mb-4">
-                                            <div className="flex items-center gap-3">
-                                                <div className="p-2 bg-white dark:bg-slate-800 rounded-xl shadow-sm">
-                                                    <Clock size={16} className="text-blue-600" />
+                                            <div className="flex items-center gap-4">
+                                                <div className="p-3 bg-white dark:bg-slate-800 rounded-2xl shadow-sm group-hover:bg-indigo-600 group-hover:text-white transition-colors">
+                                                    <Clock size={16} />
                                                 </div>
                                                 <div>
                                                     <p className="text-sm font-black text-slate-800 dark:text-white uppercase tracking-tighter">{app.date}</p>
                                                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{app.time}</p>
                                                 </div>
                                             </div>
-                                            <span className={`text-[9px] font-black px-3 py-1 rounded-full uppercase ${app.status === 'Completed' ? 'bg-emerald-100 text-emerald-600' : 'bg-blue-100 text-blue-600'}`}>
+                                            <span className={`text-[9px] font-black px-3 py-1 rounded-full uppercase ${app.status === 'Completed' ? 'bg-emerald-100 text-emerald-600' : 'bg-indigo-100 text-indigo-600'}`}>
                                                 {app.status}
                                             </span>
                                         </div>
@@ -314,27 +301,30 @@ export default function PatientDetailPage() {
                             ) : (
                                 <div className="text-center py-10 opacity-50 space-y-4">
                                     <List size={32} className="mx-auto" />
-                                    <p className="text-xs font-black uppercase tracking-widest">No visits scheduled</p>
+                                    <p className="text-xs font-black uppercase tracking-widest italic">No clinical visits logged</p>
                                 </div>
                             )}
-                            <button className="w-full py-4 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 rounded-2xl font-black text-xs uppercase tracking-widest text-slate-600 transition-all border border-slate-100 dark:border-slate-800">
-                                View Full History
+                            <button className="w-full py-5 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-[2rem] font-black text-[10px] uppercase tracking-widest transition-all hover:scale-[1.02] shadow-xl">
+                                Book New Consultation
                             </button>
                         </div>
                     </div>
 
-                    {/* Medical Conditions */}
-                    <div className="glass-card p-10 bg-indigo-900 text-white border-none shadow-xl shadow-indigo-500/10">
-                        <h3 className="text-xl font-black uppercase tracking-tighter mb-6 flex items-center gap-3 text-indigo-200">
-                            <AlertCircle size={20} /> Pre-existing conditions
+                    {/* Medical Conditions Table */}
+                    <div className="glass-card p-10 bg-indigo-950 text-white border-none shadow-2xl">
+                        <h3 className="text-xl font-black uppercase tracking-tighter mb-8 flex items-center gap-4 text-indigo-300">
+                            <AlertCircle size={22} /> Documented Comorbidities
                         </h3>
-                        <div className="p-6 bg-white/10 rounded-[2rem] border border-white/10">
-                            <p className="text-sm font-medium leading-relaxed italic text-indigo-100">
-                                {patient.medical_conditions || "No chronic conditions or documented allergies in clinical history."}
-                            </p>
-                        </div>
-                        <div className="mt-8 flex items-center gap-4 text-[10px] font-black uppercase tracking-widest">
-                            <span className="w-2 h-2 rounded-full bg-indigo-400 animate-pulse" /> Updated: Feb 20, 2026
+                        <div className="space-y-4">
+                            <div className="p-6 bg-white/5 rounded-[2.5rem] border border-white/10 hover:bg-white/10 transition-colors">
+                                <p className="text-sm font-medium leading-relaxed italic text-indigo-100">
+                                    {patient.medical_conditions || "Standard clinical baseline. No significant prior comorbidities recorded."}
+                                </p>
+                            </div>
+                            <div className="flex items-center gap-3 px-6 py-4 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl">
+                                <CheckCircle size={16} className="text-emerald-400" />
+                                <span className="text-[10px] font-black uppercase tracking-widest text-emerald-300">Allergies: None Documented</span>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -346,31 +336,8 @@ export default function PatientDetailPage() {
 function InfoItem({ label, value, highlight }: { label: string, value?: string, highlight?: boolean }) {
     return (
         <div className="space-y-1">
-            <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">{label}</p>
-            <p className={`text-sm font-black uppercase tracking-tighter ${highlight ? 'text-emerald-400' : 'text-white'}`}>{value || "N/A"}</p>
-        </div>
-    );
-}
-
-function MetricCard({ label, value, unit, icon }: { label: string, value: string | number, unit: string, icon: React.ReactNode }) {
-    return (
-        <div className="p-6 bg-white dark:bg-slate-900 rounded-[2.5rem] border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col items-start gap-4">
-            <div className="p-3 bg-slate-50 dark:bg-slate-800 rounded-2xl">
-                {icon}
-            </div>
-            <div>
-                <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-1">{label}</p>
-                <p className="text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tighter">{value} <span className="text-xs font-bold text-slate-400 lowercase">{unit}</span></p>
-            </div>
-        </div>
-    );
-}
-
-function MetricMiniCard({ label, value, unit }: { label: string, value: string | number, unit: string }) {
-    return (
-        <div className="p-6 bg-slate-50 dark:bg-slate-800/50 rounded-3xl border border-slate-100 dark:border-slate-800/50 flex flex-col items-start gap-2 group hover:border-blue-500/50 transition-all">
-            <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest leading-none">{label}</p>
-            <p className="text-xl font-black text-slate-800 dark:text-slate-200">{value} <span className="text-sm font-bold text-slate-500">{unit}</span></p>
+            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400 leading-none mb-2">{label}</p>
+            <p className={`text-sm font-black uppercase tracking-tighter ${highlight ? 'text-indigo-400' : 'text-white'}`}>{value || "Evaluating..."}</p>
         </div>
     );
 }

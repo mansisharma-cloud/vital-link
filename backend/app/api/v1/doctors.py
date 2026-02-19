@@ -314,13 +314,14 @@ async def get_patient_predictions(
         .where(Patient.id == patient_id)
         .where(Patient.doctor_id == current_doctor.id)
     )
-    if not p_result.scalars().first():
+    patient = p_result.scalars().first()
+    if not patient:
         raise HTTPException(status_code=404, detail="Patient not found")
 
     # Fetch latest metrics for the patient
     metrics_query = select(HealthMetric).where(
         HealthMetric.patient_id == patient_id
-    ).order_by(HealthMetric.timestamp.desc())
+    ).order_by(HealthMetric.timestamp.desc()).limit(20)
 
     result = await db.execute(metrics_query)
     metrics_list = result.scalars().all()
@@ -331,6 +332,8 @@ async def get_patient_predictions(
         if m.metric_type not in latest_metrics:
             latest_metrics[m.metric_type] = m.value
 
-    from app.services.prediction import predict_risk
-    analysis = predict_risk(latest_metrics)
+    from app.services.prediction import predict_multi_disease_risk
+    # Use default age/bmi for now or pull from patient profile if we add those fields
+    analysis = predict_multi_disease_risk(
+        latest_metrics, {"age": 52, "bmi": 28.4})
     return analysis
