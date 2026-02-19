@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
     Calendar,
     Clock,
@@ -8,24 +8,28 @@ import {
     User,
     MoreVertical,
     CheckCircle2,
-    ChevronRight,
     AlertCircle,
     MessageSquare,
     Loader2,
-    Filter,
     Download
 } from "lucide-react";
 
+interface Appointment {
+    id: number;
+    date: string;
+    time: string;
+    reason: string;
+    status: string;
+    doctor_name?: string;
+    hospital_name?: string;
+}
+
 export default function PatientAppointments() {
-    const [appointments, setAppointments] = useState<any[]>([]);
+    const [appointments, setAppointments] = useState<Appointment[]>([]);
     const [loading, setLoading] = useState(false);
     const [filter, setFilter] = useState("all");
 
-    useEffect(() => {
-        fetchAppointments();
-    }, [filter]);
-
-    const fetchAppointments = async () => {
+    const fetchAppointments = useCallback(async () => {
         setLoading(true);
         const token = localStorage.getItem("token");
         try {
@@ -33,9 +37,18 @@ export default function PatientAppointments() {
                 headers: { "Authorization": `Bearer ${token}` }
             });
             if (res.ok) setAppointments(await res.json());
-        } catch (err) { }
+        } catch (err) {
+            console.error("Error fetching appointments:", err);
+        }
         setLoading(false);
-    };
+    }, []);
+
+    useEffect(() => {
+        const load = async () => {
+            await fetchAppointments();
+        };
+        load();
+    }, [filter, fetchAppointments]);
 
     return (
         <div className="space-y-10 animate-fade-in pb-20">
@@ -132,7 +145,7 @@ export default function PatientAppointments() {
     );
 }
 
-function AppointmentItem({ app }: any) {
+function AppointmentItem({ app }: { app: Appointment }) {
     const dateObj = new Date(app.date);
     const isPast = dateObj < new Date();
 

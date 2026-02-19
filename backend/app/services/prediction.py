@@ -15,32 +15,46 @@ def predict_risk(metrics: Dict[str, float]) -> Dict[str, Any]:
 
     risks = []
 
-    # Cardiovascular Risk (BP and HR)
+    # Cardiovascular Risk
+    if heart_rate > 100:
+        risks.append({
+            "condition": "Arrhythmia",
+            "risk_level": "High" if heart_rate > 130 else "Moderate",
+            "score": 50 + (heart_rate - 100)
+        })
+    elif heart_rate < 50:
+        risks.append({
+            "condition": "Bradycardia",
+            "risk_level": "Moderate",
+            "score": round(100 - heart_rate, 1)
+        })
+
+    # Blood Pressure / Stress Risk
     if bp_sys > 140 or bp_dia > 90:
         risks.append({
             "condition": "Hypertension",
             "risk_level": "High" if bp_sys > 160 else "Moderate",
             "score": round(min(bp_sys / 2, 95), 1)
         })
-    elif heart_rate > 100 and stress_level > 60:
+    elif stress_level > 70:
         risks.append({
-            "condition": "Acute Stress Response",
+            "condition": "Hypertension",
             "risk_level": "Moderate",
-            "score": 65.5
+            "score": float(stress_level)
         })
 
-    # Metabolic Risk (Glucose)
-    if glucose > 126:
+    # Metabolic Risk (Diabetes/Glucose)
+    if glucose > 125:
         risks.append({
-            "condition": "Hyperglycemia",
+            "condition": "Diabetes",
             "risk_level": "High",
             "score": round(glucose / 1.5, 1)
         })
-    elif glucose < 70:
+    elif glucose > 100:
         risks.append({
-            "condition": "Hypoglycemia",
-            "risk_level": "High",
-            "score": 88.0
+            "condition": "Diabetes",
+            "risk_level": "Moderate",
+            "score": 40.0
         })
 
     # Respiratory Risk (SpO2)
@@ -65,7 +79,7 @@ def predict_risk(metrics: Dict[str, float]) -> Dict[str, Any]:
         }
 
     return {
-        "overall_status": "Critical" if any(r["risk_level"] == "High" for r in risks) else "Stable",
+        "overall_status": "Warning" if any(r["risk_level"] == "High" for r in risks) else "Stable",
         "predictions": risks,
         "summary": f"Detected {len(risks)} clinical anomalies requiring attention."
     }

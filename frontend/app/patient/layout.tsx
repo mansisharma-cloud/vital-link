@@ -1,12 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import {
     Home,
     LayoutDashboard,
-    Search,
     Calendar,
     UserCircle,
     LogOut,
@@ -15,30 +14,28 @@ import {
     X,
     Bell,
     Activity,
-    ChevronDown
+    ChevronDown,
+    Phone
 } from "lucide-react";
 import Logo from "@/components/Logo";
+
+interface Patient {
+    full_name: string;
+    patient_id?: string;
+    hospital_name?: string;
+    doctor_emergency_contact?: string;
+    doctor_name?: string;
+    doctor_specialization?: string;
+}
 
 export default function PatientLayout({ children }: { children: React.ReactNode }) {
     const router = useRouter();
     const pathname = usePathname();
-    const [patient, setPatient] = useState<any>(null);
+    const [patient, setPatient] = useState<Patient | null>(null);
     const [isSidebarOpen, setIsSidebarOpen] = useState(true);
     const [isProfileOpen, setIsProfileOpen] = useState(false);
 
-    useEffect(() => {
-        const token = localStorage.getItem("token");
-        const role = localStorage.getItem("role");
-
-        if (!token || role !== "patient") {
-            router.push("/login/patient");
-            return;
-        }
-
-        fetchPatientData(token);
-    }, []);
-
-    const fetchPatientData = async (token: string) => {
+    const fetchPatientData = useCallback(async (token: string) => {
         try {
             const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/v1/patients/me`, {
                 headers: { "Authorization": `Bearer ${token}` }
@@ -51,7 +48,22 @@ export default function PatientLayout({ children }: { children: React.ReactNode 
         } catch (err) {
             console.error("Failed to fetch patient profile", err);
         }
-    };
+    }, [router]);
+
+    useEffect(() => {
+        const token = localStorage.getItem("token");
+        const role = localStorage.getItem("role");
+
+        if (!token || role !== "patient") {
+            router.push("/login/patient");
+            return;
+        }
+
+        const load = async () => {
+            await fetchPatientData(token);
+        };
+        load();
+    }, [router, fetchPatientData]);
 
     const handleLogout = () => {
         localStorage.clear();
@@ -79,8 +91,8 @@ export default function PatientLayout({ children }: { children: React.ReactNode 
                                 key={item.href}
                                 href={item.href}
                                 className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${pathname === item.href
-                                        ? "bg-blue-600 text-white shadow-lg shadow-blue-500/20"
-                                        : "text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-blue-600"
+                                    ? "bg-blue-600 text-white shadow-lg shadow-blue-500/20"
+                                    : "text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-blue-600"
                                     }`}
                             >
                                 {item.icon}
@@ -120,24 +132,39 @@ export default function PatientLayout({ children }: { children: React.ReactNode 
                     </div>
 
                     <div className="flex items-center gap-6">
-                        <button className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 text-slate-500 hover:text-blue-600 transition-colors relative">
+                        {/* X.5 Emergency Contact Display */}
+                        <div className="hidden xl:flex items-center gap-3 px-4 py-2 bg-rose-50 dark:bg-rose-900/20 rounded-xl border border-rose-100 dark:border-rose-800/50">
+                            <div className="w-8 h-8 rounded-full bg-rose-500 text-white flex items-center justify-center animate-pulse">
+                                <Phone size={16} />
+                            </div>
+                            <div>
+                                <p className="text-[10px] font-bold text-rose-500 uppercase tracking-widest leading-none">Emergency Contact</p>
+                                <p className="text-sm font-black text-rose-700 dark:text-rose-400 leading-none mt-1">
+                                    {patient?.doctor_emergency_contact || "+1 (555) 000-应急"}
+                                </p>
+                            </div>
+                        </div>
+
+                        <button className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800 text-slate-500 hover:text-[var(--primary)] transition-colors relative" aria-label="Notifications">
                             <Bell size={20} />
-                            <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-white dark:border-slate-800" />
+                            <span className="absolute top-2.5 right-2.5 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white dark:border-slate-800" />
                         </button>
 
                         <div className="relative">
                             <button
                                 onClick={() => setIsProfileOpen(!isProfileOpen)}
-                                className="flex items-center gap-3 p-1.5 pl-4 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:border-blue-500 transition-all"
+                                className="flex items-center gap-3 p-1.5 pl-4 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:border-[var(--primary)] transition-all shadow-sm"
+                                aria-expanded={isProfileOpen}
+                                aria-label="User Profile"
                             >
                                 <div className="text-right hidden sm:block">
-                                    <p className="text-sm font-bold text-slate-800 dark:text-white leading-none">{patient?.full_name || "Patient"}</p>
-                                    <p className="text-xs text-slate-500 mt-1">{patient?.patient_id || "ID: --"}</p>
+                                    <p className="text-sm font-black text-slate-800 dark:text-white leading-none">{patient?.full_name?.split(' ')[0] || "Patient"}</p>
+                                    <p className="text-[10px] text-slate-500 font-bold uppercase tracking-tighter mt-1">{patient?.patient_id || "ID: --"}</p>
                                 </div>
-                                <div className="w-10 h-10 rounded-xl bg-emerald-600 flex items-center justify-center text-white font-bold shadow-md">
+                                <div className="w-11 h-11 rounded-xl bg-blue-600 flex items-center justify-center text-white font-black shadow-md">
                                     {patient?.full_name?.charAt(0) || "P"}
                                 </div>
-                                <ChevronDown size={16} className={`text-slate-400 transition-transform ${isProfileOpen ? "rotate-180" : ""}`} />
+                                <ChevronDown size={16} className={`text-slate-400 transition-transform duration-300 ${isProfileOpen ? "rotate-180" : ""}`} />
                             </button>
 
                             {isProfileOpen && (

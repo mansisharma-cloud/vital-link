@@ -1,15 +1,11 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
     Calendar as CalendarIcon,
-    MapPin,
     Clock,
     Plus,
-    Search,
-    ChevronRight,
     MoreVertical,
-    CheckCircle2,
     XCircle,
     Clock3,
     User,
@@ -17,9 +13,24 @@ import {
     Loader2
 } from "lucide-react";
 
+interface Patient {
+    id: number;
+    patient_id: string;
+    full_name: string;
+}
+
+interface Appointment {
+    id: number;
+    patient_id: number;
+    date: string;
+    time: string;
+    reason: string;
+    status: string;
+}
+
 export default function DoctorAppointments() {
-    const [appointments, setAppointments] = useState<any[]>([]);
-    const [patients, setPatients] = useState<any[]>([]);
+    const [appointments, setAppointments] = useState<Appointment[]>([]);
+    const [patients, setPatients] = useState<Patient[]>([]);
     const [loading, setLoading] = useState(false);
     const [showBookingForm, setShowBookingForm] = useState(false);
     const [bookingLoading, setBookingLoading] = useState(false);
@@ -32,11 +43,7 @@ export default function DoctorAppointments() {
         status: "Scheduled"
     });
 
-    useEffect(() => {
-        fetchInitialData();
-    }, []);
-
-    const fetchInitialData = async () => {
+    const fetchInitialData = useCallback(async () => {
         setLoading(true);
         const token = localStorage.getItem("token");
         try {
@@ -51,9 +58,18 @@ export default function DoctorAppointments() {
 
             if (appRes.ok) setAppointments(await appRes.json());
             if (patRes.ok) setPatients(await patRes.json());
-        } catch (err) { }
+        } catch (err) {
+            console.error("Error fetching initial data:", err);
+        }
         setLoading(false);
-    };
+    }, []);
+
+    useEffect(() => {
+        const load = async () => {
+            await fetchInitialData();
+        };
+        load();
+    }, [fetchInitialData]);
 
     const handleBookAppointment = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -73,7 +89,9 @@ export default function DoctorAppointments() {
                 fetchInitialData(); // Refresh list
                 setFormData({ patient_id: "", date: "", time: "", reason: "", status: "Scheduled" });
             }
-        } catch (err) { }
+        } catch (err) {
+            console.error("Error booking appointment:", err);
+        }
         setBookingLoading(false);
     };
 
@@ -85,7 +103,9 @@ export default function DoctorAppointments() {
                 headers: { "Authorization": `Bearer ${token}` }
             });
             if (res.ok) fetchInitialData();
-        } catch (err) { }
+        } catch (err) {
+            console.error("Error updating status:", err);
+        }
     };
 
     return (
@@ -163,7 +183,7 @@ export default function DoctorAppointments() {
                 {/* Right: Summary / Quick Form Toggle */}
                 <div className="space-y-8">
                     <div className="glass-card p-8 border-b-8 border-emerald-500">
-                        <h3 className="text-lg font-bold mb-6">Today's Performance</h3>
+                        <h3 className="text-lg font-bold mb-6">Today&apos;s Performance</h3>
                         <div className="space-y-6">
                             <div className="flex justify-between items-end">
                                 <span className="text-slate-400 text-xs font-bold uppercase tracking-widest">Scheduled</span>
@@ -173,7 +193,7 @@ export default function DoctorAppointments() {
                                 <div className="h-full bg-blue-600 rounded-full w-[0%]" />
                             </div>
                             <p className="text-xs text-slate-500 leading-relaxed italic">
-                                "Appointment density is low for today. Consider reviewing pending follow-up reports."
+                                &quot;Appointment density is low for today. Consider reviewing pending follow-up reports.&quot;
                             </p>
                         </div>
                     </div>
@@ -289,12 +309,12 @@ export default function DoctorAppointments() {
     );
 }
 
-function AppointmentRow({ appointment, patients, onUpdate }: { appointment: any, patients: any[], onUpdate: (status: string) => void }) {
+function AppointmentRow({ appointment, patients, onUpdate }: { appointment: Appointment, patients: Patient[], onUpdate: (status: string) => void }) {
     const [showMenu, setShowMenu] = useState(false);
     const patient = patients.find(p => p.id === appointment.patient_id);
     const dateObj = new Date(appointment.date);
 
-    const statusColors: any = {
+    const statusColors: Record<string, string> = {
         Scheduled: "bg-blue-100 dark:bg-blue-900/30 text-blue-600",
         Completed: "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600",
         Cancelled: "bg-rose-100 dark:bg-rose-900/30 text-rose-600"

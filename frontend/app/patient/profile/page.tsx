@@ -1,8 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import {
-    User,
     Dna,
     MapPin,
     Phone,
@@ -16,21 +15,36 @@ import {
     Edit2,
     Save,
     Loader2,
-    Lock
+    Lock,
+    ExternalLink,
+    AlertCircle
 } from "lucide-react";
 
+interface Patient {
+    full_name: string;
+    patient_id: string;
+    contact_number: string;
+    dob_display: string;
+    gender: string;
+    address: string;
+    emergency_contact: string;
+    blood_group: string;
+    medical_conditions: string;
+    doctor_name: string;
+    doctor_specialization: string;
+    doctor_qualification: string;
+    hospital_name: string;
+    hospital_address: string;
+    consultation_timings: string;
+}
+
 export default function PatientProfile() {
-    const [patient, setPatient] = useState<any>(null);
+    const [patient, setPatient] = useState<Patient | null>(null);
     const [editing, setEditing] = useState(false);
     const [loading, setLoading] = useState(false);
     const [contactNumber, setContactNumber] = useState("");
 
-    useEffect(() => {
-        const token = localStorage.getItem("token");
-        if (token) fetchProfile(token);
-    }, []);
-
-    const fetchProfile = async (token: string) => {
+    const fetchProfile = useCallback(async (token: string) => {
         try {
             const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/v1/patients/me`, {
                 headers: { "Authorization": `Bearer ${token}` }
@@ -40,8 +54,20 @@ export default function PatientProfile() {
                 setPatient(data);
                 setContactNumber(data.contact_number);
             }
-        } catch (err) { }
-    };
+        } catch (err) {
+            console.error("Error fetching profile:", err);
+        }
+    }, []);
+
+    useEffect(() => {
+        const token = localStorage.getItem("token");
+        if (token) {
+            const load = async () => {
+                await fetchProfile(token);
+            };
+            load();
+        }
+    }, [fetchProfile]);
 
     const handleUpdateContact = async () => {
         setLoading(true);
@@ -60,7 +86,9 @@ export default function PatientProfile() {
                 setPatient(updatedPatient);
                 setEditing(false);
             }
-        } catch (err) { }
+        } catch (err) {
+            console.error("Error updating contact:", err);
+        }
         setLoading(false);
     };
 
@@ -196,7 +224,7 @@ export default function PatientProfile() {
     );
 }
 
-function ProfileField({ icon, label, value, locked }: any) {
+function ProfileField({ icon, label, value, locked }: { icon?: React.ReactNode, label: string, value: string, locked?: boolean }) {
     return (
         <div className="space-y-2 group">
             <div className="flex items-center gap-3 text-slate-400 font-bold text-xs uppercase tracking-widest group-hover:text-slate-500 transition-colors">
@@ -211,7 +239,7 @@ function ProfileField({ icon, label, value, locked }: any) {
     );
 }
 
-function ProviderDetail({ icon, label, value, color }: any) {
+function ProviderDetail({ icon, label, value, color }: { icon: React.ReactNode, label: string, value: string, color?: string }) {
     return (
         <div className="flex gap-4">
             <div className={`p-2 rounded-xl bg-slate-50 dark:bg-slate-800 ${color || "text-blue-600"}`}>
@@ -225,15 +253,4 @@ function ProviderDetail({ icon, label, value, color }: any) {
     );
 }
 
-// Custom icons missed in lucide imports would be added here or fixed in imports above
-function AlertCircle(props: any) {
-    return (
-        <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
-    );
-}
 
-function ExternalLink(props: any) {
-    return (
-        <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
-    );
-}

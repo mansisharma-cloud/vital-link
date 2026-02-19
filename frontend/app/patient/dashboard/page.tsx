@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
     Activity,
     Heart,
@@ -10,8 +10,6 @@ import {
     Download,
     TrendingUp,
     TrendingDown,
-    Info,
-    Loader2
 } from "lucide-react";
 
 interface Metric {
@@ -25,13 +23,9 @@ interface Metric {
 export default function PatientDashboard() {
     const [metrics, setMetrics] = useState<Metric[]>([]);
     const [loading, setLoading] = useState(false);
-    const [timeRange, setTimeRange] = useState("Last 7 Days");
+    const [timeRange] = useState("Last 7 Days");
 
-    useEffect(() => {
-        fetchMetrics();
-    }, [timeRange]);
-
-    const fetchMetrics = async () => {
+    const fetchMetrics = useCallback(async () => {
         setLoading(true);
         const token = localStorage.getItem("token");
         try {
@@ -39,9 +33,18 @@ export default function PatientDashboard() {
                 headers: { "Authorization": `Bearer ${token}` }
             });
             if (res.ok) setMetrics(await res.json());
-        } catch (err) { }
+        } catch (err) {
+            console.error("Error fetching metrics:", err);
+        }
         setLoading(false);
-    };
+    }, []);
+
+    useEffect(() => {
+        const load = async () => {
+            await fetchMetrics();
+        };
+        load();
+    }, [timeRange, fetchMetrics]);
 
     return (
         <div className="space-y-10 animate-fade-in pb-20">

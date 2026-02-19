@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import {
     User,
     Mail,
@@ -18,18 +18,30 @@ import {
     Camera
 } from "lucide-react";
 
+interface Doctor {
+    id: number;
+    doctor_id: string;
+    full_name: string;
+    specialization: string;
+    qualification: string;
+    hospital_name: string;
+    hospital_address: string;
+    contact_number: string;
+    consultation_timings: string;
+    role?: string;
+    email?: string;
+    license_number?: string;
+    emergency_contact?: string;
+    hospital_contact?: string;
+}
+
 export default function DoctorProfile() {
-    const [doctor, setDoctor] = useState<any>(null);
+    const [doctor, setDoctor] = useState<Doctor | null>(null);
     const [editing, setEditing] = useState(false);
     const [loading, setLoading] = useState(false);
-    const [formData, setFormData] = useState<any>({});
+    const [formData, setFormData] = useState<Partial<Doctor>>({});
 
-    useEffect(() => {
-        const token = localStorage.getItem("token");
-        if (token) fetchProfile(token);
-    }, []);
-
-    const fetchProfile = async (token: string) => {
+    const fetchProfile = useCallback(async (token: string) => {
         try {
             const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/v1/doctors/me`, {
                 headers: { "Authorization": `Bearer ${token}` }
@@ -39,8 +51,20 @@ export default function DoctorProfile() {
                 setDoctor(data);
                 setFormData(data);
             }
-        } catch (err) { }
-    };
+        } catch (err) {
+            console.error("Error fetching doctor profile:", err);
+        }
+    }, []);
+
+    useEffect(() => {
+        const token = localStorage.getItem("token");
+        if (token) {
+            const load = async () => {
+                await fetchProfile(token);
+            };
+            load();
+        }
+    }, [fetchProfile]);
 
     const handleUpdate = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -60,7 +84,7 @@ export default function DoctorProfile() {
                 setDoctor(updatedDoctor);
                 setEditing(false);
             }
-        } catch (err) { }
+        } catch { }
         setLoading(false);
     };
 
@@ -120,27 +144,27 @@ export default function DoctorProfile() {
 
                     <form onSubmit={handleUpdate} className="grid grid-cols-1 md:grid-cols-2 gap-x-16 gap-y-10 border-t border-slate-100 dark:border-slate-800 pt-12">
                         <ProfileInput
-                            icon={<User />} label="Full Name" name="full_name"
+                            icon={<User />} label="Full Name"
                             value={formData?.full_name} editing={editing}
                             onChange={(v: string) => setFormData({ ...formData, full_name: v })}
                         />
                         <ProfileInput
-                            icon={<GraduationCap />} label="Qualification" name="qualification"
+                            icon={<GraduationCap />} label="Qualification"
                             value={formData?.qualification} editing={editing}
                             onChange={(v: string) => setFormData({ ...formData, qualification: v })}
                         />
                         <ProfileInput
-                            icon={<Stethoscope />} label="Specialization" name="role"
+                            icon={<Stethoscope />} label="Specialization"
                             value={formData?.role} editing={editing}
                             onChange={(v: string) => setFormData({ ...formData, role: v })}
                         />
                         <ProfileInput
-                            icon={<Phone />} label="Emergency Contact" name="emergency_contact"
+                            icon={<Phone />} label="Emergency Contact"
                             value={formData?.emergency_contact} editing={editing}
                             onChange={(v: string) => setFormData({ ...formData, emergency_contact: v })}
                         />
                         <ProfileInput
-                            icon={<Clock />} label="Consultation Timings" name="consultation_timings"
+                            icon={<Clock />} label="Consultation Timings"
                             value={formData?.consultation_timings} editing={editing}
                             onChange={(v: string) => setFormData({ ...formData, consultation_timings: v })}
                         />
@@ -176,7 +200,7 @@ export default function DoctorProfile() {
     );
 }
 
-function ProfileInput({ icon, label, value, editing, onChange }: any) {
+function ProfileInput({ icon, label, value, editing, onChange }: { icon: React.ReactNode, label: string, value?: string, editing?: boolean, onChange: (v: string) => void }) {
     return (
         <div className="space-y-3 group">
             <div className="flex items-center gap-3 text-slate-400 font-bold text-[10px] uppercase tracking-[0.2em] group-hover:text-blue-500 transition-colors">
