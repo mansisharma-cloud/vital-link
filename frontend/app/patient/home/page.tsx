@@ -69,6 +69,8 @@ export default function PatientHome() {
                 await fetchData(token);
             };
             load();
+            const interval = setInterval(() => fetchData(token), 10000);
+            return () => clearInterval(interval);
         }
     }, [fetchData]);
 

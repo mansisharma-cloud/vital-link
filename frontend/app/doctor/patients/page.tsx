@@ -40,6 +40,7 @@ function DoctorPatientsContent() {
     const searchParams = useSearchParams();
     const router = useRouter();
     const activeTab = searchParams.get("tab") || "old";
+    const patientIdParam = searchParams.get("id");
 
     const [patients, setPatients] = useState<Patient[]>([]);
     const [loading, setLoading] = useState(false);
@@ -114,11 +115,23 @@ function DoctorPatientsContent() {
     }, [activeTab, fetchPatients]);
 
     useEffect(() => {
+        if (patientIdParam) {
+            const id = parseInt(patientIdParam);
+            const loadParam = async () => {
+                setSelectedPatientId(id);
+            };
+            loadParam();
+        }
+    }, [patientIdParam]);
+
+    useEffect(() => {
         if (selectedPatientId) {
             const load = async () => {
                 await fetchPatientDetail(selectedPatientId);
             };
             load();
+            const interval = setInterval(load, 5000);
+            return () => clearInterval(interval);
         }
     }, [selectedPatientId, fetchPatientDetail]);
 

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { Users, UserPlus, Calendar, AlertCircle, TrendingUp, ChevronRight } from "lucide-react";
 
 interface Doctor {
@@ -21,6 +22,7 @@ interface Patient {
 }
 
 export default function DoctorDashboard() {
+    const router = useRouter();
     const [stats, setStats] = useState({
         totalPatients: 0,
         newPatients: 0,
@@ -78,6 +80,8 @@ export default function DoctorDashboard() {
             if (token) await fetchDoctor(token);
         };
         loadData();
+        const interval = setInterval(fetchStats, 10000);
+        return () => clearInterval(interval);
     }, [fetchStats, fetchDoctor]);
 
     return (
@@ -168,7 +172,7 @@ export default function DoctorDashboard() {
                                             </td>
                                             <td className="py-4 text-right">
                                                 <button
-                                                    onClick={() => window.location.href = `/doctor/patients?tab=old&id=${patient.id}`}
+                                                    onClick={() => router.push(`/doctor/patients?tab=old&id=${patient.id}`)}
                                                     className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-slate-400 transition-colors"
                                                 >
                                                     <ChevronRight size={18} />
@@ -188,7 +192,7 @@ export default function DoctorDashboard() {
                         <h3 className="text-xl font-bold mb-4">Quick Action</h3>
                         <p className="text-white/80 text-sm mb-6 leading-relaxed">Add a new patient to your hospital records and generate their unique ID instantly.</p>
                         <button
-                            onClick={() => window.location.href = '/doctor/patients?tab=new'}
+                            onClick={() => router.push('/doctor/patients?tab=new')}
                             className="w-full py-4 bg-white text-blue-600 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-slate-50 transition-colors"
                         >
                             <UserPlus size={20} /> Add New Patient
