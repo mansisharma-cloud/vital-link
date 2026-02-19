@@ -46,11 +46,14 @@ export default function DoctorDashboard() {
     const fetchStats = useCallback(async () => {
         const token = localStorage.getItem("token");
         try {
-            const [patRes, appRes] = await Promise.all([
+            const [patRes, appRes, statsRes] = await Promise.all([
                 fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/v1/doctors/patients?limit=10`, {
                     headers: { "Authorization": `Bearer ${token}` }
                 }),
                 fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/v1/doctors/appointments`, {
+                    headers: { "Authorization": `Bearer ${token}` }
+                }),
+                fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/v1/doctors/stats`, {
                     headers: { "Authorization": `Bearer ${token}` }
                 })
             ]);
@@ -58,13 +61,17 @@ export default function DoctorDashboard() {
             if (patRes.ok) {
                 const patientsList = await patRes.json();
                 setPatients(patientsList);
-                setStats(prev => ({
-                    ...prev,
-                    totalPatients: patientsList.length,
-                    newPatients: patientsList.slice(0, 5).length // Just as a simple metric
-                }));
             }
-            if (appRes.ok) {
+            if (statsRes.ok) {
+                const statsData = await statsRes.json();
+                setStats({
+                    totalPatients: statsData.total_patients,
+                    newPatients: statsData.new_patients,
+                    todayAppointments: statsData.today_appointments,
+                    pendingActions: statsData.pending_actions
+                });
+            } else if (appRes.ok) {
+                // Fallback for appointments if stats fails
                 const apps = await appRes.json();
                 setStats(prev => ({ ...prev, todayAppointments: apps.length }));
             }
@@ -72,6 +79,7 @@ export default function DoctorDashboard() {
             console.error("Error fetching stats:", err);
         }
     }, []);
+
 
     useEffect(() => {
         const loadData = async () => {

@@ -474,11 +474,39 @@ function DoctorPatientsContent() {
                                 </div>
 
                                 <div className="flex-1 overflow-y-auto p-12 space-y-12">
-                                    <div className="grid md:grid-cols-3 gap-8">
-                                        <InfoCard label="Contact" value={patientDetail.contact_number} icon={<Phone size={18} />} />
-                                        <InfoCard label="Emergency" value={patientDetail.emergency_contact} icon={<AlertCircle size={18} />} />
-                                        <InfoCard label="Blood Group" value={patientDetail.blood_group || "O+"} icon={<Droplet size={18} />} />
-                                    </div>
+                                    {/* Helper function to get the latest metric value */}
+                                    {(() => {
+                                        const getLatestMetric = (type: string) => {
+                                            const metric = patientMetrics
+                                                .filter(m => m.metric_type.toLowerCase() === type.toLowerCase())
+                                                .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())[0];
+                                            return metric ? metric.value : "N/A";
+                                        };
+
+                                        // Helper component for mini metric cards
+                                        const MetricMiniCard = ({ label, value, unit }: { label: string, value: string | number, unit: string }) => (
+                                            <div className="p-6 bg-slate-50 dark:bg-slate-800/50 rounded-3xl border border-slate-100 dark:border-slate-800/50 flex flex-col items-start gap-2 group hover:border-blue-500/50 transition-all">
+                                                <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest leading-none">{label}</p>
+                                                <p className="text-xl font-black text-slate-800 dark:text-slate-200">{value} <span className="text-sm font-bold text-slate-500">{unit}</span></p>
+                                            </div>
+                                        );
+
+                                        return (
+                                            <>
+                                                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                                    <MetricMiniCard label="Heart Rate" value={getLatestMetric('heart_rate')} unit="BPM" />
+                                                    <MetricMiniCard label="Glucose" value={getLatestMetric('glucose')} unit="mg/dL" />
+                                                    <MetricMiniCard label="SpO2" value={getLatestMetric('spo2')} unit="%" />
+                                                    <MetricMiniCard label="Stress" value={getLatestMetric('stress_level')} unit="%" />
+                                                </div>
+                                                <div className="grid md:grid-cols-3 gap-8">
+                                                    <InfoCard label="Contact" value={patientDetail.contact_number} icon={<Phone size={18} />} />
+                                                    <InfoCard label="Emergency" value={patientDetail.emergency_contact} icon={<AlertCircle size={18} />} />
+                                                    <InfoCard label="Blood Group" value={patientDetail.blood_group || "O+"} icon={<Droplet size={18} />} />
+                                                </div>
+                                            </>
+                                        );
+                                    })()}
 
                                     <div className="space-y-6">
                                         <h3 className="text-sm font-black text-slate-400 uppercase tracking-[0.3em] flex items-center gap-3">
