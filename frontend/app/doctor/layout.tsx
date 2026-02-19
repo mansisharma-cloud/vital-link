@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import {
@@ -18,26 +18,23 @@ import {
 } from "lucide-react";
 import Logo from "@/components/Logo";
 
+interface Doctor {
+    full_name: string;
+    specialization?: string;
+    hospital_name?: string;
+    role?: string;
+    emergency_contact?: string;
+    consultation_timings?: string;
+}
+
 export default function DoctorLayout({ children }: { children: React.ReactNode }) {
     const router = useRouter();
     const pathname = usePathname();
-    const [doctor, setDoctor] = useState<any>(null);
+    const [doctor, setDoctor] = useState<Doctor | null>(null);
     const [isSidebarOpen, setIsSidebarOpen] = useState(true);
     const [isProfileOpen, setIsProfileOpen] = useState(false);
 
-    useEffect(() => {
-        const token = localStorage.getItem("token");
-        const role = localStorage.getItem("role");
-
-        if (!token || role !== "doctor") {
-            router.push("/login/doctor");
-            return;
-        }
-
-        fetchDoctorData(token);
-    }, []);
-
-    const fetchDoctorData = async (token: string) => {
+    const fetchDoctorData = useCallback(async (token: string) => {
         try {
             const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/v1/doctors/me`, {
                 headers: { "Authorization": `Bearer ${token}` }
@@ -50,7 +47,22 @@ export default function DoctorLayout({ children }: { children: React.ReactNode }
         } catch (err) {
             console.error("Failed to fetch doctor profile", err);
         }
-    };
+    }, [router]);
+
+    useEffect(() => {
+        const token = localStorage.getItem("token");
+        const role = localStorage.getItem("role");
+
+        if (!token || role !== "doctor") {
+            router.push("/login/doctor");
+            return;
+        }
+
+        const load = async () => {
+            await fetchDoctorData(token);
+        };
+        load();
+    }, [router, fetchDoctorData]);
 
     const handleLogout = () => {
         localStorage.clear();
@@ -77,8 +89,8 @@ export default function DoctorLayout({ children }: { children: React.ReactNode }
                                 key={item.href}
                                 href={item.href}
                                 className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${pathname === item.href
-                                        ? "bg-blue-600 text-white shadow-lg shadow-blue-500/20"
-                                        : "text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-blue-600"
+                                    ? "bg-blue-600 text-white shadow-lg shadow-blue-500/20"
+                                    : "text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-blue-600"
                                     }`}
                             >
                                 {item.icon}

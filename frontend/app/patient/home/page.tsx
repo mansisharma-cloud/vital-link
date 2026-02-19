@@ -1,32 +1,38 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import {
     Heart,
     Activity,
     Calendar,
-    AlertTriangle,
-    Stethoscope,
     ArrowRight,
     Clock,
-    ExternalLink,
-    ChevronRight
+    TrendingUp
 } from "lucide-react";
 import Link from "next/link";
 
+interface Patient {
+    full_name: string;
+}
+
+interface Metric {
+    metric_type: string;
+    value: number;
+    timestamp: string;
+}
+
+interface Appointment {
+    date: string;
+    time: string;
+    reason: string;
+}
+
 export default function PatientHome() {
-    const [patient, setPatient] = useState<any>(null);
-    const [metrics, setMetrics] = useState<any[]>([]);
-    const [nextAppointment, setNextAppointment] = useState<any>(null);
+    const [patient, setPatient] = useState<Patient | null>(null);
+    const [metrics, setMetrics] = useState<Metric[]>([]);
+    const [nextAppointment, setNextAppointment] = useState<Appointment | null>(null);
 
-    useEffect(() => {
-        const token = localStorage.getItem("token");
-        if (token) {
-            fetchData(token);
-        }
-    }, []);
-
-    const fetchData = async (token: string) => {
+    const fetchData = useCallback(async (token: string) => {
         try {
             // Fetch profile
             const profRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/v1/patients/me`, {
@@ -48,162 +54,205 @@ export default function PatientHome() {
                 const apps = await appRes.json();
                 // Simple logic to find next appointment
                 const now = new Date();
-                const futureApps = apps.filter((a: any) => new Date(a.date) >= now);
+                const futureApps = apps.filter((a: Appointment) => new Date(a.date) >= now);
                 if (futureApps.length > 0) setNextAppointment(futureApps[0]);
             }
-        } catch (err) { }
+        } catch (err) {
+            console.error("Error fetching patient data:", err);
+        }
+    }, []);
+
+    useEffect(() => {
+        const token = localStorage.getItem("token");
+        if (token) {
+            const load = async () => {
+                await fetchData(token);
+            };
+            load();
+        }
+    }, [fetchData]);
+
+    const getGreeting = () => {
+        const hour = new Date().getHours();
+        if (hour < 12) return "Good Morning";
+        if (hour < 17) return "Good Afternoon";
+        return "Good Evening";
     };
 
     return (
         <div className="space-y-10 animate-fade-in pb-20">
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
                 <div>
-                    <h1 className="text-4xl font-bold text-slate-800 dark:text-white mb-2">
-                        Hello, <span className="text-emerald-600">{patient?.full_name?.split(' ')[0] || "Patient"}</span>
+                    <h1 className="text-4xl font-black text-slate-800 dark:text-white mb-2 tracking-tight">
+                        {getGreeting()}, <span className="text-[var(--primary)]">{patient?.full_name?.split(' ')[0] || "Patient"}</span>
                     </h1>
-                    <p className="text-slate-500 font-medium italic">Everything looks good today. Keep up the healthy habits!</p>
+                    <p className="text-slate-500 font-medium text-lg">
+                        {metrics.length > 0 ? "Everything looks good today. Keep up the healthy habits!" : "Welcome! We're ready to track your health progress today."}
+                    </p>
                 </div>
 
-                <div className="flex items-center gap-3 bg-white dark:bg-slate-800 px-6 py-3 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
-                    <Calendar size={20} className="text-emerald-600" />
-                    <span className="font-bold text-slate-700 dark:text-slate-200">{new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</span>
+                <div className="flex items-center gap-3 bg-white dark:bg-slate-800 px-6 py-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+                    <Calendar size={22} className="text-[var(--primary)]" />
+                    <span className="font-black text-slate-800 dark:text-slate-200">{new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</span>
                 </div>
             </div>
 
             {/* Overview Cards */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 {/* Latest Health Metrics Card */}
-                <div className="glass-card p-8 flex flex-col gap-6 lg:col-span-2">
+                <div className="glass-card p-10 flex flex-col gap-6 lg:col-span-2">
                     <div className="flex items-center justify-between">
-                        <h2 className="text-xl font-bold flex items-center gap-2">
-                            <Activity className="text-emerald-500" />
-                            Latest Health Metrics
+                        <h2 className="text-2xl font-black text-slate-800 dark:text-white flex items-center gap-3">
+                            <Activity className="text-blue-500" size={28} />
+                            Your Latest Stats
                         </h2>
-                        <Link href="/patient/dashboard" className="text-blue-600 font-bold text-sm hover:underline flex items-center gap-1">
-                            View Analytics <ArrowRight size={14} />
+                        <Link href="/patient/dashboard" className="btn-secondary px-4 py-2 text-xs font-bold">
+                            Detailed View <ArrowRight size={14} />
                         </Link>
                     </div>
 
-                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                         <MetricBox
-                            label="Heart Rate"
+                            label="Heart Beat"
                             value="72"
                             unit="bpm"
-                            icon={<Heart size={18} className="text-rose-500" />}
-                            status="Normal"
+                            icon={<Heart size={20} className="text-rose-500" />}
+                            status="Healthy"
                         />
                         <MetricBox
-                            label="Glucose"
+                            label="Blood Sugar"
                             value="95"
                             unit="mg/dL"
-                            icon={<Activity size={18} className="text-blue-500" />}
-                            status="Normal"
+                            icon={<Activity size={20} className="text-amber-500" />}
+                            status="Stable"
                         />
                         <MetricBox
-                            label="Blood Pressure"
+                            label="BP Level"
                             value="120/80"
                             unit="mmHg"
-                            icon={<Activity size={18} className="text-emerald-500" />}
+                            icon={<Activity size={20} className="text-emerald-500" />}
                             status="Ideal"
                         />
                     </div>
 
-                    <div className="p-4 bg-emerald-50 dark:bg-emerald-900/10 rounded-2xl border border-emerald-100 dark:border-emerald-800/50 flex gap-4 items-center">
-                        <div className="w-12 h-12 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center text-emerald-600 shrink-0">
-                            <TrendingUp size={24} />
+                    <div className="p-5 bg-blue-50/50 dark:bg-blue-900/10 rounded-2xl border border-blue-100 dark:border-blue-800/50 flex gap-5 items-center">
+                        <div className="w-14 h-14 rounded-2xl bg-blue-600 text-white flex items-center justify-center shadow-lg shrink-0">
+                            <TrendingUp size={28} />
                         </div>
                         <div>
-                            <p className="font-bold text-emerald-800 dark:text-emerald-400 text-sm">Your average stress levels have dropped by 15% this week.</p>
-                            <p className="text-xs text-emerald-600 dark:text-emerald-500 mt-0.5 italic">Great job on maintaining a balanced routine!</p>
+                            <p className="font-black text-blue-900 dark:text-blue-400">Weekly Health Trend</p>
+                            <p className="text-sm text-blue-700 dark:text-blue-500 mt-1">Your stress levels have dropped by 15% this week. Great job!</p>
                         </div>
                     </div>
                 </div>
 
-                {/* Doctor & Hospital Details */}
-                <div className="glass-card p-8 flex flex-col items-center text-center gap-6 border-b-4 border-blue-600">
-                    <div className="w-20 h-20 rounded-3xl bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-600 shadow-inner">
-                        <Stethoscope size={40} />
-                    </div>
+                {/* Y.6 Disease Risk Assessment Card */}
+                <div className="glass-card p-10 flex flex-col gap-8 bg-gradient-to-br from-white to-slate-50 dark:from-slate-900 dark:to-slate-800 border-l-4 border-l-blue-500">
                     <div>
-                        <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-1">Assigned Specialist</h3>
-                        <h2 className="text-xl font-bold text-slate-800 dark:text-white">{patient?.doctor_name || "Dr. Medical Specialist"}</h2>
-                        <p className="text-sm text-blue-600 font-bold mt-1 tracking-wide">{patient?.doctor_specialization || "General Physician"}</p>
+                        <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Early Detection System</h3>
+                        <h2 className="text-xl font-black text-slate-800 dark:text-white leading-tight">Disease Risk Assessment</h2>
                     </div>
-                    <div className="w-full pt-4 border-t border-slate-100 dark:border-slate-800">
-                        <p className="text-xs font-bold text-slate-400 uppercase mb-2">Primary Hospital</p>
-                        <p className="font-bold text-slate-700 dark:text-slate-300">{patient?.hospital_name || "Community Health Center"}</p>
+
+                    <div className="space-y-6">
+                        <RiskIndicator label="Diabetes Risk" level="Low" color="emerald" />
+                        <RiskIndicator label="Hypertension" level="Minimal" color="blue" />
+                        <RiskIndicator label="Heart Health" level="Good" color="emerald" />
                     </div>
-                    <Link href="/patient/profile" className="btn-secondary w-full py-3 text-sm">View Full Profile</Link>
+
+                    <Link href="/patient/insights" className="btn-primary w-full py-4 text-sm font-black shadow-blue-500/20">
+                        View Detailed Insights
+                    </Link>
                 </div>
             </div>
 
             <div className="grid lg:grid-cols-2 gap-8">
                 {/* Next Appointment Card */}
-                <div className="glass-card p-8 relative overflow-hidden group">
-                    <div className="absolute top-0 right-0 p-8 text-slate-50 dark:text-slate-800 pointer-events-none group-hover:scale-110 transition-transform">
-                        <Calendar size={120} />
+                <div className="glass-card p-10 relative overflow-hidden group border-b-4 border-b-amber-500/50">
+                    <div className="absolute top-0 right-0 p-10 text-slate-100 dark:text-slate-800/20 pointer-events-none group-hover:scale-110 transition-transform duration-500">
+                        <Calendar size={180} />
                     </div>
-                    <div className="relative z-10 flex flex-col h-full justify-between gap-8">
+                    <div className="relative z-10 flex flex-col h-full justify-between gap-10">
                         <div>
-                            <h3 className="text-xl font-bold mb-2 flex items-center gap-2">
-                                <Clock className="text-amber-500" />
-                                Next Appointment
+                            <h3 className="text-2xl font-black mb-2 flex items-center gap-3">
+                                <Clock className="text-amber-500" size={28} />
+                                Next Meeting
                             </h3>
-                            <p className="text-slate-500 font-medium">Don't forget your scheduled visit</p>
+                            <p className="text-slate-500 font-medium text-lg">Your upcoming doctor consultation</p>
                         </div>
 
                         {nextAppointment ? (
-                            <div className="flex items-center gap-6">
-                                <div className="flex flex-col items-center bg-blue-600 text-white p-4 rounded-3xl shadow-lg border-4 border-white dark:border-slate-800">
-                                    <span className="text-xs font-bold uppercase">{new Date(nextAppointment.date).toLocaleDateString('en-US', { month: 'short' })}</span>
-                                    <span className="text-2xl font-bold leading-none">{new Date(nextAppointment.date).getDate()}</span>
+                            <div className="flex items-center gap-8">
+                                <div className="flex flex-col items-center bg-amber-500 text-white p-6 rounded-3xl shadow-xl border-4 border-white dark:border-slate-800">
+                                    <span className="text-sm font-black uppercase tracking-widest">{new Date(nextAppointment.date).toLocaleDateString('en-US', { month: 'short' })}</span>
+                                    <span className="text-4xl font-black leading-none mt-1">{new Date(nextAppointment.date).getDate()}</span>
                                 </div>
                                 <div>
-                                    <p className="text-sm font-bold text-slate-400 uppercase mb-1">Consultation at</p>
-                                    <p className="text-2xl font-bold text-slate-800 dark:text-white leading-tight">{nextAppointment.time}</p>
-                                    <p className="text-sm text-slate-500 font-medium mt-1">{nextAppointment.reason}</p>
+                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Scheduled for</p>
+                                    <p className="text-3xl font-black text-slate-800 dark:text-white leading-tight">{nextAppointment.time}</p>
+                                    <p className="text-base text-slate-500 font-medium mt-2 flex items-center gap-2">
+                                        <div className="w-2 h-2 rounded-full bg-amber-500" />
+                                        {nextAppointment.reason}
+                                    </p>
                                 </div>
                             </div>
                         ) : (
-                            <div className="text-slate-400 italic font-medium p-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border-2 border-dashed border-slate-200 dark:border-slate-700 text-center">
-                                No upcoming appointments scheduled.
+                            <div className="text-slate-500 font-bold p-8 bg-slate-100/50 dark:bg-slate-800/50 rounded-3xl border-2 border-dashed border-slate-200 dark:border-slate-700 text-center text-lg">
+                                No upcoming appointments.
                             </div>
                         )}
 
-                        <Link href="/patient/appointments" className="flex items-center gap-2 text-blue-600 font-bold hover:gap-3 transition-all underline decoration-2 underline-offset-4">
-                            Manage Appointments <ChevronRight size={18} />
+                        <Link href="/patient/appointments" className="btn-secondary self-start px-6 py-3 font-black text-sm">
+                            Manage Appointments
                         </Link>
                     </div>
                 </div>
 
-                {/* Recent Alerts Card */}
-                <div className="glass-card p-8 flex flex-col gap-6">
-                    <h3 className="text-xl font-bold flex items-center gap-2">
-                        <AlertTriangle className="text-rose-500" />
-                        Recent System Alerts
-                    </h3>
-                    <div className="space-y-4">
-                        <AlertBox
-                            type="warning"
-                            title="Weekly Report Available"
-                            message="Your health summary for this week has been generated with AI insights."
-                            time="2 hours ago"
-                        />
-                        <AlertBox
-                            type="info"
-                            title="Appointment Tomorrow"
-                            message="Friendly reminder: You have a follow-up consultation with Dr. John at 2:00 PM."
-                            time="1 day ago"
-                        />
+                {/* X.5 Health Tips Card */}
+                <div className="glass-card p-10 flex flex-col gap-8 bg-[var(--primary)] text-white relative overflow-hidden">
+                    <div className="absolute -bottom-10 -right-10 opacity-10">
+                        <Heart size={240} />
                     </div>
-                    <button className="text-sm text-slate-400 font-bold hover:text-slate-700 transition-colors self-center">Mark all as read</button>
+                    <div className="relative z-10">
+                        <h3 className="text-[10px] font-black text-blue-100 uppercase tracking-widest mb-3">Daily Health Tip</h3>
+                        <h2 className="text-3xl font-black leading-tight mb-4">Drink 8 glasses of water today.</h2>
+                        <p className="text-blue-100 font-medium text-lg leading-relaxed">
+                            Staying hydrated helps your body maintain a healthy heart rate and keeps your energy levels high throughout the day.
+                        </p>
+                    </div>
+
+                    <div className="mt-auto relative z-10 flex items-center gap-4 pt-6 border-t border-blue-400/30">
+                        <Link href="#" className="p-3 bg-white/20 rounded-xl hover:bg-white/30 transition-all font-black text-sm">
+                            Next Tip
+                        </Link>
+                        <p className="text-xs font-bold text-blue-100">7-day hydration goal in progress 💧</p>
+                    </div>
                 </div>
             </div>
         </div>
     );
 }
 
-function MetricBox({ label, value, unit, icon, status }: any) {
+function RiskIndicator({ label, level, color }: { label: string, level: string, color: string }) {
+    const colorClasses: Record<string, string> = {
+        emerald: "bg-emerald-500",
+        blue: "bg-blue-500",
+        amber: "bg-amber-500",
+        rose: "bg-rose-500"
+    };
+    return (
+        <div className="space-y-2">
+            <div className="flex justify-between items-end">
+                <span className="text-sm font-black text-slate-700 dark:text-slate-300">{label}</span>
+                <span className="text-xs font-bold text-slate-500">{level}</span>
+            </div>
+            <div className="h-2 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                <div className={`h-full ${colorClasses[color]} w-1/4 animate-pulse`} />
+            </div>
+        </div>
+    );
+}
+
+function MetricBox({ label, value, unit, icon, status }: { label: string, value: string | number, unit: string, icon: React.ReactNode, status: string }) {
     return (
         <div className="p-5 bg-slate-50 dark:bg-slate-800 rounded-3xl border border-slate-100 dark:border-slate-800/50 group hover:border-blue-500 transition-all cursor-default shadow-sm hover:shadow-md">
             <div className="flex items-center justify-between mb-3">
@@ -218,23 +267,6 @@ function MetricBox({ label, value, unit, icon, status }: any) {
     );
 }
 
-function AlertBox({ type, title, message, time }: any) {
-    const colors = type === 'warning'
-        ? 'bg-amber-100/50 dark:bg-amber-900/20 text-amber-900 dark:text-amber-400 border-amber-200 dark:border-amber-800/50'
-        : 'bg-blue-100/50 dark:bg-blue-900/20 text-blue-900 dark:text-blue-400 border-blue-200 dark:border-blue-800/50';
-    return (
-        <div className={`p-4 rounded-2xl border ${colors} flex flex-col gap-1`}>
-            <div className="flex justify-between items-center">
-                <span className="font-bold text-xs uppercase tracking-widest">{title}</span>
-                <span className="text-[10px] opacity-70 font-semibold">{time}</span>
-            </div>
-            <p className="text-xs leading-relaxed opacity-90">{message}</p>
-        </div>
-    );
-}
 
-function TrendingUp(props: any) {
-    return (
-        <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></svg>
-    );
-}
+
+

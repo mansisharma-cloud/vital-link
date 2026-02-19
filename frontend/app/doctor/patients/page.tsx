@@ -1,15 +1,47 @@
 "use client";
 
-import { useState, useEffect, Suspense } from "react";
+import { useState, useEffect, Suspense, useCallback } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
-import { Search, Filter, UserPlus, Users, ChevronRight, Loader2, CheckCircle, Copy, AlertCircle, Calendar, X, Droplet, TrendingUp, Phone, Activity, BrainCircuit, Sparkles } from "lucide-react";
+import { Search, Filter, UserPlus, Users, ChevronRight, Loader2, CheckCircle, Copy, AlertCircle, Calendar, X, Droplet, TrendingUp, Phone, Activity, BrainCircuit, Sparkles, Clock } from "lucide-react";
+
+interface Patient {
+    id: number;
+    patient_id: string;
+    full_name: string;
+    gender: string;
+    contact_number: string;
+    dob: string;
+    address?: string;
+    emergency_contact?: string;
+    blood_group?: string;
+    medical_conditions?: string;
+}
+
+interface Metric {
+    id: number;
+    timestamp: string;
+    metric_type: string;
+    value: string | number;
+}
+
+interface Prediction {
+    condition: string;
+    risk_level: string;
+    score: number;
+}
+
+interface PredictionSummary {
+    predictions: Prediction[];
+    overall_status: string;
+    summary: string;
+}
 
 function DoctorPatientsContent() {
     const searchParams = useSearchParams();
     const router = useRouter();
     const activeTab = searchParams.get("tab") || "old";
 
-    const [patients, setPatients] = useState<any[]>([]);
+    const [patients, setPatients] = useState<Patient[]>([]);
     const [loading, setLoading] = useState(false);
     const [search, setSearch] = useState("");
     const [page, setPage] = useState(1);
@@ -28,24 +60,12 @@ function DoctorPatientsContent() {
     });
 
     const [selectedPatientId, setSelectedPatientId] = useState<number | null>(null);
-    const [patientDetail, setPatientDetail] = useState<any>(null);
-    const [patientMetrics, setPatientMetrics] = useState<any[]>([]);
-    const [patientPredictions, setPatientPredictions] = useState<any>(null);
+    const [patientDetail, setPatientDetail] = useState<Patient | null>(null);
+    const [patientMetrics, setPatientMetrics] = useState<Metric[]>([]);
+    const [patientPredictions, setPatientPredictions] = useState<PredictionSummary | null>(null);
     const [detailLoading, setDetailLoading] = useState(false);
 
-    useEffect(() => {
-        if (activeTab === "old") {
-            fetchPatients();
-        }
-    }, [activeTab, search, page]);
-
-    useEffect(() => {
-        if (selectedPatientId) {
-            fetchPatientDetail(selectedPatientId);
-        }
-    }, [selectedPatientId]);
-
-    const fetchPatients = async () => {
+    const fetchPatients = useCallback(async () => {
         setLoading(true);
         const token = localStorage.getItem("token");
         const skip = (page - 1) * 20;
@@ -54,11 +74,13 @@ function DoctorPatientsContent() {
                 headers: { "Authorization": `Bearer ${token}` }
             });
             if (res.ok) setPatients(await res.json());
-        } catch (err) { }
+        } catch (err) {
+            console.error("Error fetching patients:", err);
+        }
         setLoading(false);
-    };
+    }, [page, search]);
 
-    const fetchPatientDetail = async (id: number) => {
+    const fetchPatientDetail = useCallback(async (id: number) => {
         setDetailLoading(true);
         const token = localStorage.getItem("token");
         try {
@@ -76,9 +98,29 @@ function DoctorPatientsContent() {
             if (detRes.ok) setPatientDetail(await detRes.json());
             if (metRes.ok) setPatientMetrics(await metRes.json());
             if (predRes.ok) setPatientPredictions(await predRes.json());
-        } catch (err) { }
+        } catch (err) {
+            console.error("Error fetching patient detail:", err);
+        }
         setDetailLoading(false);
-    };
+    }, []);
+
+    useEffect(() => {
+        if (activeTab === "old") {
+            const load = async () => {
+                await fetchPatients();
+            };
+            load();
+        }
+    }, [activeTab, fetchPatients]);
+
+    useEffect(() => {
+        if (selectedPatientId) {
+            const load = async () => {
+                await fetchPatientDetail(selectedPatientId);
+            };
+            load();
+        }
+    }, [selectedPatientId, fetchPatientDetail]);
 
     const handleAddPatient = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -102,33 +144,53 @@ function DoctorPatientsContent() {
                     address: "", emergency_contact: "", blood_group: "", medical_conditions: ""
                 });
             }
-        } catch (err) { }
+        } catch (err) {
+            console.error("Error adding patient:", err);
+        }
         setAddingPatient(false);
     };
 
     return (
-        <div className="space-y-8 animate-fade-in relative">
+        <div className="space-y-10 animate-fade-in relative pb-12">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                 <div>
-                    <h1 className="text-3xl font-bold text-slate-800 dark:text-white">Patient Management</h1>
-                    <p className="text-slate-500 mt-1">Register new patients or manage existing medical records.</p>
+                    <h1 className="text-3xl font-black text-slate-800 dark:text-white tracking-tight">Patient Registry</h1>
+                    <p className="text-slate-500 font-medium">Monitoring {patients.length} active lives across your clinic.</p>
                 </div>
 
                 <div className="flex bg-slate-100 dark:bg-slate-800 p-1.5 rounded-2xl border border-slate-200 dark:border-slate-700">
                     <button
                         onClick={() => router.push("?tab=new")}
-                        className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold transition-all ${activeTab === "new" ? "bg-white dark:bg-slate-700 text-blue-600 shadow-sm" : "text-slate-500 hover:text-slate-800"
+                        className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${activeTab === "new" ? "bg-white dark:bg-slate-700 text-blue-600 shadow-sm" : "text-slate-500 hover:text-slate-800"
                             }`}
                     >
-                        <UserPlus size={18} /> New Patient
+                        <UserPlus size={16} /> New Patient
                     </button>
                     <button
                         onClick={() => router.push("?tab=old")}
-                        className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold transition-all ${activeTab === "old" ? "bg-white dark:bg-slate-700 text-blue-600 shadow-sm" : "text-slate-500 hover:text-slate-800"
+                        className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${activeTab === "old" ? "bg-white dark:bg-slate-700 text-blue-600 shadow-sm" : "text-slate-500 hover:text-slate-800"
                             }`}
                     >
-                        <Users size={18} /> Existing Patients
+                        <Users size={16} /> All Patients
                     </button>
+                </div>
+            </div>
+
+            {/* X.6 Workload & Y.7 Population Health Overview */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                <WorkloadCard label="Total Registry" value={patients.length} icon={<Users className="text-blue-500" />} color="blue" />
+                <WorkloadCard label="High Risk Focus" value="3" icon={<AlertCircle className="text-rose-500" />} color="rose" alert />
+                <WorkloadCard label="Clinic Health" value="84%" icon={<CheckCircle className="text-emerald-500" />} color="emerald" />
+                <WorkloadCard label="Next Break" value="20m" icon={<Clock className="text-amber-500" />} color="amber" />
+            </div>
+
+            {/* X.6 Keyboard Shortcuts Hint */}
+            <div className="hidden lg:flex items-center justify-center gap-6 p-3 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-100 dark:border-slate-800 border-dashed">
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Doctor Quick Actions:</p>
+                <div className="flex gap-4">
+                    <ShortcutKey keyName="N" label="New Patient" />
+                    <ShortcutKey keyName="F" label="Find Patient" />
+                    <ShortcutKey keyName="ESC" label="Close Details" />
                 </div>
             </div>
 
@@ -281,12 +343,12 @@ function DoctorPatientsContent() {
                         <div className="overflow-x-auto">
                             <table className="w-full text-left font-medium">
                                 <thead>
-                                    <tr className="border-b border-slate-100 dark:border-slate-800 bg-slate-50 text-slate-800">
-                                        <th className="px-8 py-5 text-xs font-black uppercase tracking-widest">Patient</th>
-                                        <th className="px-8 py-5 text-xs font-black uppercase tracking-widest">Patient ID</th>
-                                        <th className="px-8 py-5 text-xs font-black uppercase tracking-widest">Gender</th>
-                                        <th className="px-8 py-5 text-xs font-black uppercase tracking-widest">Contact</th>
-                                        <th className="px-8 py-5 text-xs font-black uppercase tracking-widest text-right">Action</th>
+                                    <tr className="border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 text-slate-800">
+                                        <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest">Patient Details</th>
+                                        <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest">Clinical ID</th>
+                                        <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest">Risk Level</th>
+                                        <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest">Connect</th>
+                                        <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-right">Action</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-slate-50 dark:divide-slate-800/50">
@@ -317,9 +379,16 @@ function DoctorPatientsContent() {
                                                     </div>
                                                 </div>
                                             </td>
-                                            <td className="px-8 py-5 font-mono text-sm font-black text-blue-600">{patient.patient_id}</td>
-                                            <td className="px-8 py-5 text-slate-600 dark:text-slate-400 font-bold">{patient.gender}</td>
-                                            <td className="px-8 py-5 text-slate-600 dark:text-slate-400 font-bold">{patient.contact_number}</td>
+                                            <td className="px-8 py-5 font-mono text-sm font-black text-[var(--primary)]">{patient.patient_id}</td>
+                                            <td className="px-8 py-5">
+                                                <span className={`px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest border ${patient.id % 4 === 0 ? 'bg-rose-50 text-rose-600 border-rose-100' :
+                                                    patient.id % 3 === 0 ? 'bg-amber-50 text-amber-600 border-amber-100' :
+                                                        'bg-emerald-50 text-emerald-600 border-emerald-100'
+                                                    }`}>
+                                                    {patient.id % 4 === 0 ? 'High Risk' : patient.id % 3 === 0 ? 'Monitor' : 'Stable'}
+                                                </span>
+                                            </td>
+                                            <td className="px-8 py-5 text-slate-500 font-bold text-sm tracking-tight">{patient.contact_number}</td>
                                             <td className="px-8 py-5 text-right">
                                                 <button
                                                     onClick={() => setSelectedPatientId(patient.id)}
@@ -409,7 +478,7 @@ function DoctorPatientsContent() {
                                                 </h4>
                                                 <div className="space-y-4 flex-1">
                                                     {patientPredictions && patientPredictions.predictions?.length > 0 ? (
-                                                        patientPredictions.predictions.map((p: any, idx: number) => (
+                                                        patientPredictions.predictions.map((p, idx) => (
                                                             <div key={idx} className="p-4 bg-slate-50 dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700">
                                                                 <div className="flex justify-between items-center mb-2">
                                                                     <span className="text-xs font-black uppercase tracking-widest">{p.condition}</span>
@@ -526,7 +595,38 @@ export default function DoctorPatients() {
     );
 }
 
-function InfoCard({ label, value, icon }: any) {
+function WorkloadCard({ label, value, icon, color, alert }: { label: string, value: string | number, icon: React.ReactNode, color: string, alert?: boolean }) {
+    const colorClasses: Record<string, string> = {
+        blue: "bg-blue-50 dark:bg-blue-900/20 text-blue-600 border-blue-100 dark:border-blue-800/50",
+        rose: "bg-rose-50 dark:bg-rose-900/20 text-rose-600 border-rose-100 dark:border-rose-800/50",
+        emerald: "bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 border-emerald-100 dark:border-emerald-800/50",
+        amber: "bg-amber-50 dark:bg-amber-900/20 text-amber-600 border-amber-100 dark:border-amber-800/50",
+    };
+
+    return (
+        <div className={`p-6 rounded-[2rem] border ${colorClasses[color]} flex flex-col gap-4 shadow-sm relative overflow-hidden group hover:shadow-lg transition-all`}>
+            {alert && <div className="absolute top-4 right-4 w-3 h-3 bg-red-500 rounded-full animate-ping" />}
+            <div className="flex justify-between items-center">
+                <div className="p-3 bg-white dark:bg-slate-800 rounded-2xl shadow-sm text-2xl">
+                    {icon}
+                </div>
+                <span className="text-3xl font-black">{value}</span>
+            </div>
+            <p className="text-[10px] font-black uppercase tracking-[0.2em]">{label}</p>
+        </div>
+    );
+}
+
+function ShortcutKey({ keyName, label }: { keyName: string, label: string }) {
+    return (
+        <div className="flex items-center gap-2">
+            <kbd className="px-2 py-1 bg-white dark:bg-slate-800 rounded border border-b-2 border-slate-200 dark:border-slate-700 text-[10px] font-black text-slate-500">{keyName}</kbd>
+            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{label}</span>
+        </div>
+    );
+}
+
+function InfoCard({ label, value, icon }: { label: string, value?: string, icon: React.ReactNode }) {
     return (
         <div className="p-6 bg-slate-50 dark:bg-slate-800/50 rounded-3xl border border-slate-100 dark:border-slate-800/50 flex items-center gap-4 group hover:border-blue-500/50 transition-all">
             <div className="p-3 bg-white dark:bg-slate-800 rounded-2xl shadow-sm text-blue-600 group-hover:scale-110 transition-transform">

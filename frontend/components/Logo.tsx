@@ -1,4 +1,4 @@
-import { Building2, HeartPulse } from "lucide-react";
+import { HeartPulse } from "lucide-react";
 
 export default function Logo({ className = "", showText = true }: { className?: string, showText?: boolean }) {
     return (

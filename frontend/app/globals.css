@@ -5,13 +5,21 @@
 }
 
 :root {
-  --primary: #3B82F6;
-  --secondary: #10B981;
-  --background: #f8fafc;
-  --foreground: #0f172a;
-  --accent-coral: #FF7F7F;
-  --accent-gold: #FFB347;
+  --primary: #4A90E2;
+  /* Soft Blue */
+  --secondary: #4ECDC4;
+  /* Mint Green */
+  --accent-peach: #FFB347;
+  /* Peach accent */
+  --background: #F9F9F9;
+  /* Off-White background */
+  --foreground: #4A4A4A;
+  /* Soft Dark Gray text */
   --card: #ffffff;
+  --success: #7ED321;
+  --warning: #F5A623;
+  --alert: #D0021B;
+  --radius-comfort: 12px;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -24,56 +32,83 @@
 }
 
 .dark {
-  --background: #000000;
-  --foreground: #F8FAFC;
-  --card: #0A0A0A;
-  --primary: #3B82F6;
+  --background: #121212;
+  --foreground: #E0E0E0;
+  --card: #1E1E1E;
+  --primary: #4A90E2;
 }
 
 @layer base {
+  html {
+    font-size: 16px;
+    /* X.1 Minimum font size 16px */
+  }
+
   body {
     @apply bg-[var(--background)] text-[var(--foreground)] selection:bg-blue-100 selection:text-blue-900;
+    font-family: 'Poppins', sans-serif;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
   }
 
   * {
-    @apply border-slate-200 dark:border-slate-800 transition-colors duration-200;
+    @apply border-slate-200 dark:border-slate-800 transition-all duration-300 ease-in-out;
+    /* X.4 Gentle fade animations */
   }
 }
 
 .medical-gradient {
-  background: linear-gradient(135deg, #2A7DE1 0%, #1E40AF 100%);
+  background: linear-gradient(135deg, var(--primary) 0%, #357ABD 100%);
 }
 
 .glass-card {
-  @apply bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border border-white/20 dark:border-slate-800 rounded-3xl shadow-xl;
+  @apply bg-white dark:bg-slate-900 backdrop-blur-md border border-slate-200 dark:border-slate-800 shadow-sm;
+  border-radius: var(--radius-comfort);
 }
 
 @layer components {
   .chart-container {
-    @apply bg-[var(--card)] rounded-2xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm transition-all hover:shadow-md;
+    @apply bg-[var(--card)] p-6 border border-slate-200 dark:border-slate-800 shadow-sm transition-all hover:shadow-md;
+    border-radius: var(--radius-comfort);
   }
 
   .btn-primary {
-    @apply px-6 py-3 rounded-xl bg-[var(--primary)] text-white font-semibold transform transition hover:scale-105 hover:bg-blue-700 active:scale-95 shadow-lg shadow-blue-500/20 disabled:opacity-50 disabled:cursor-not-allowed;
+    @apply px-6 py-3 bg-[var(--primary)] text-white font-semibold transform transition hover:opacity-90 active:scale-95 shadow-lg shadow-blue-500/20 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2;
+    border-radius: var(--radius-comfort);
+    min-height: 48px;
+    /* X.5 Large touch targets */
   }
 
   .btn-secondary {
-    @apply px-6 py-3 rounded-xl bg-white dark:bg-slate-800 text-[var(--foreground)] border border-slate-200 dark:border-slate-700 font-semibold transform transition hover:scale-105 hover:bg-slate-50 dark:hover:bg-slate-700 active:scale-95 shadow-sm;
+    @apply px-6 py-3 bg-white dark:bg-slate-800 text-[var(--foreground)] border border-slate-200 dark:border-slate-700 font-semibold transform transition hover:bg-slate-50 dark:hover:bg-slate-700 active:scale-95 shadow-sm inline-flex items-center justify-center gap-2;
+    border-radius: var(--radius-comfort);
+    min-height: 48px;
+  }
+
+  .input-field {
+    @apply w-full px-5 py-3.5 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-[var(--primary)] outline-none transition-all text-[var(--foreground)] placeholder:text-slate-400;
+    border-radius: var(--radius-comfort);
   }
 }
 
-.slide-down {
-  animation: slideDown 0.3s ease-out;
+.risk-gauge-container {
+  @apply relative flex items-center justify-center overflow-hidden;
 }
 
-@keyframes slideDown {
+.skeleton-loading {
+  @apply bg-slate-200 dark:bg-slate-800 animate-pulse rounded-xl;
+}
+
+@keyframes fadeIn {
   from {
     opacity: 0;
-    transform: translateY(-10px);
   }
 
   to {
     opacity: 1;
-    transform: translateY(0);
   }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.3s ease-in-out;
 }

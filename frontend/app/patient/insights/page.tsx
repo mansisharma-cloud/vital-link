@@ -1,11 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
     Sparkles,
     ShieldCheck,
     BrainCircuit,
-    AlertCircle,
     TrendingUp,
     Activity,
     Zap,
@@ -15,18 +14,23 @@ import {
     Lock
 } from "lucide-react";
 
+interface Insight {
+    id: number;
+    type: string;
+    title: string;
+    confidence: string;
+    description: string;
+    status: string;
+}
+
 export default function PatientInsights() {
-    const [insights, setInsights] = useState<any[]>([]);
+    const [insights, setInsights] = useState<Insight[]>([]);
     const [summary, setSummary] = useState("");
     const [status, setStatus] = useState("Healthy");
     const [loading, setLoading] = useState(false);
     const [analyzing, setAnalyzing] = useState(false);
 
-    useEffect(() => {
-        fetchInsights();
-    }, []);
-
-    const fetchInsights = async () => {
+    const fetchInsights = useCallback(async () => {
         setLoading(true);
         const token = localStorage.getItem("token");
         try {
@@ -39,7 +43,7 @@ export default function PatientInsights() {
                 setStatus(data.overall_status);
 
                 // Map API response to UI model
-                const mappedInsights = data.predictions.map((p: any, idx: number) => ({
+                const mappedInsights = data.predictions.map((p: { condition: string, score: number, risk_level: string }, idx: number) => ({
                     id: idx,
                     type: "prediction",
                     title: `${p.condition} Analysis`,
@@ -60,9 +64,18 @@ export default function PatientInsights() {
                 }
                 setInsights(mappedInsights);
             }
-        } catch (err) { }
+        } catch (err) {
+            console.error("Error fetching insights:", err);
+        }
         setLoading(false);
-    };
+    }, []);
+
+    useEffect(() => {
+        const load = async () => {
+            await fetchInsights();
+        };
+        load();
+    }, [fetchInsights]);
 
     const handleRunAnalysis = async () => {
         setAnalyzing(true);
@@ -193,7 +206,7 @@ export default function PatientInsights() {
                             <h4 className="text-lg font-bold text-blue-800 dark:text-blue-300">Predictive Modeling</h4>
                         </div>
                         <p className="text-sm text-blue-700/70 dark:text-blue-400 font-medium leading-relaxed italic">
-                            "Our models are trained on over 2.4 million medical records to provide accurate, early detection of potential health complications."
+                            &quot;Our models are trained on over 2.4 million medical records to provide accurate, early detection of potential health complications.&quot;
                         </p>
                     </div>
                 </div>
@@ -202,7 +215,7 @@ export default function PatientInsights() {
     );
 }
 
-function InsightCard({ insight }: any) {
+function InsightCard({ insight }: { insight: Insight }) {
     return (
         <div className="glass-card p-10 flex flex-col md:flex-row gap-8 group hover:border-blue-500/50 transition-all cursor-default">
             <div className="flex flex-col items-center justify-between py-2 border-r border-slate-100 dark:border-slate-800 pr-8 min-w-[120px]">
@@ -234,7 +247,7 @@ function InsightCard({ insight }: any) {
     );
 }
 
-function RecommendItem({ title, value, desc }: any) {
+function RecommendItem({ title, value, desc }: { title: string, value: string, desc: string }) {
     return (
         <div className="space-y-2">
             <div className="flex justify-between items-center">

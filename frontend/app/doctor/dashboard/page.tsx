@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Users, UserPlus, Calendar, AlertCircle, TrendingUp, Search, ChevronRight } from "lucide-react";
+import { useEffect, useState, useCallback } from "react";
+import { Users, UserPlus, Calendar, AlertCircle, TrendingUp, ChevronRight } from "lucide-react";
 
 interface Doctor {
     id: number;
@@ -28,24 +28,20 @@ export default function DoctorDashboard() {
         pendingActions: 2
     });
     const [doctor, setDoctor] = useState<Doctor | null>(null);
+    const [patients, setPatients] = useState<Patient[]>([]);
 
-    useEffect(() => {
-        fetchStats();
-        // Fetch doctor info for welcome message
-        const token = localStorage.getItem("token");
-        if (token) fetchDoctor(token);
-    }, []);
-
-    const fetchDoctor = async (token: string) => {
+    const fetchDoctor = useCallback(async (token: string) => {
         try {
             const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/v1/doctors/me`, {
                 headers: { "Authorization": `Bearer ${token}` }
             });
             if (res.ok) setDoctor(await res.json());
-        } catch (err) { }
-    }
+        } catch (err) {
+            console.error("Error fetching doctor:", err);
+        }
+    }, []);
 
-    const fetchStats = async () => {
+    const fetchStats = useCallback(async () => {
         const token = localStorage.getItem("token");
         try {
             const [patRes, appRes] = await Promise.all([
@@ -70,10 +66,19 @@ export default function DoctorDashboard() {
                 const apps = await appRes.json();
                 setStats(prev => ({ ...prev, todayAppointments: apps.length }));
             }
-        } catch (err) { }
-    };
+        } catch (err) {
+            console.error("Error fetching stats:", err);
+        }
+    }, []);
 
-    const [patients, setPatients] = useState<Patient[]>([]);
+    useEffect(() => {
+        const loadData = async () => {
+            await fetchStats();
+            const token = localStorage.getItem("token");
+            if (token) await fetchDoctor(token);
+        };
+        loadData();
+    }, [fetchStats, fetchDoctor]);
 
     return (
         <div className="space-y-10 animate-fade-in">
@@ -82,7 +87,7 @@ export default function DoctorDashboard() {
                     <h1 className="text-4xl font-bold text-slate-800 dark:text-white mb-2">
                         Welcome back, <span className="text-blue-600">Dr. {doctor?.full_name?.split(' ').pop() || "Medical"}</span>
                     </h1>
-                    <p className="text-slate-500 font-medium">Here's what's happening at {doctor?.hospital_name || "your hospital"} today.</p>
+                    <p className="text-slate-500 font-medium">Here&apos;s what&apos;s happening at {doctor?.hospital_name || "your hospital"} today.</p>
                 </div>
 
                 <div className="flex items-center gap-3 bg-white dark:bg-slate-900 px-6 py-3 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
@@ -199,13 +204,13 @@ export default function DoctorDashboard() {
                             <div className="flex items-start gap-4">
                                 <div className="w-2 h-2 rounded-full bg-emerald-500 mt-2 shrink-0" />
                                 <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed italic border-l-2 border-emerald-500/20 pl-4">
-                                    "Total patient registrations have increased by 12% this week compared to last month."
+                                    &quot;Total patient registrations have increased by 12% this week compared to last month.&quot;
                                 </p>
                             </div>
                             <div className="flex items-start gap-4">
                                 <div className="w-2 h-2 rounded-full bg-blue-500 mt-2 shrink-0" />
                                 <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed italic border-l-2 border-blue-500/20 pl-4">
-                                    "Recent check-ups indicate a trend in early hypertension detection in active adults."
+                                    &quot;Recent check-ups indicate a trend in early hypertension detection in active adults.&quot;
                                 </p>
                             </div>
                         </div>
