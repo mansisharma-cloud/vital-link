@@ -2,9 +2,18 @@
 
 import { useEffect, useState, useRef } from "react";
 
+export interface HealthMetric {
+    heart_rate: number;
+    glucose: number;
+    temperature: number;
+    stress_level: number;
+    timestamp: number;
+    status: string;
+}
+
 export function useHealthMetrics() {
-    const [metrics, setMetrics] = useState<any[]>([]);
-    const [currentMetric, setCurrentMetric] = useState<any>(null);
+    const [metrics, setMetrics] = useState<HealthMetric[]>([]);
+    const [currentMetric, setCurrentMetric] = useState<HealthMetric | null>(null);
     const socketRef = useRef<WebSocket | null>(null);
 
     useEffect(() => {
@@ -16,7 +25,7 @@ export function useHealthMetrics() {
         socketRef.current = socket;
 
         socket.onmessage = (event) => {
-            const data = JSON.parse(event.data);
+            const data: HealthMetric = JSON.parse(event.data);
             setCurrentMetric(data);
             setMetrics((prev) => [...prev.slice(-20), data]);
         };

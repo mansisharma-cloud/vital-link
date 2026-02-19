@@ -1,12 +1,55 @@
 @import "tailwindcss";
 
 @theme {
-  --font-sans: var(--font-inter);
+  --font-sans: 'Poppins', var(--font-inter);
+}
+
+:root {
+  --primary: #2A7DE1;
+  --secondary: #2C9A6E;
+  --background: #F5F7FA;
+  --foreground: #333333;
+  --accent-coral: #FF7F7F;
+  --accent-gold: #FFB347;
+  --card: #FFFFFF;
+}
+
+.dark {
+  --background: #0F172A;
+  --foreground: #F8FAFC;
+  --card: #1E293B;
+  --primary: #3B82F6;
 }
 
 @layer base {
+  body {
+    @apply bg-[var(--background)] text-[var(--foreground)] selection:bg-blue-100 selection:text-blue-900;
+  }
+
   * {
     @apply border-slate-200 dark:border-slate-800 transition-colors duration-200;
+  }
+}
+
+.medical-gradient {
+  background: linear-gradient(135deg, #2A7DE1 0%, #1E40AF 100%);
+}
+
+.glass-card {
+  @apply bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border border-white/20 dark:border-slate-800 rounded-3xl shadow-xl;
+}
+
+@layer components {
+  .chart-container {
+    @apply bg-[var(--card)] rounded-2xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm transition-all hover:shadow-md;
+  }
+
+  .btn-primary {
+    @apply px-6 py-3 rounded-xl bg-[var(--primary)] text-white font-semibold transform transition hover:scale-105 hover:bg-blue-700 active:scale-95 shadow-lg shadow-blue-500/20 disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .btn-secondary {
+    @apply px-6 py-3 rounded-xl bg-white dark:bg-slate-800 text-[var(--foreground)] border border-slate-200 dark:border-slate-700 font-semibold transform transition hover:scale-105 hover:bg-slate-50 dark:hover:bg-slate-700 active:scale-95 shadow-sm;
   }
 }
 
@@ -19,14 +62,9 @@
     opacity: 0;
     transform: translateY(-10px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
-  }
-}
-
-@layer components {
-  .chart-container {
-    @apply bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm transition-all hover:shadow-md;
   }
 }

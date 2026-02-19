@@ -84,7 +84,13 @@ export default function Profile() {
     );
 }
 
-function SidebarItem({ icon, label, active }: any) {
+interface SidebarItemProps {
+    icon?: React.ReactNode;
+    label: string;
+    active?: boolean;
+}
+
+function SidebarItem({ icon, label, active }: SidebarItemProps) {
     return (
         <button className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all ${active ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20' : 'text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800'}`}>
             {icon && <span className="h-5 w-5 opacity-70">{icon}</span>}

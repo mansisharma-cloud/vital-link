@@ -12,3 +12,5 @@ websockets
 scikit-learn
 pandas
 numpy
+aiosqlite
+httpx

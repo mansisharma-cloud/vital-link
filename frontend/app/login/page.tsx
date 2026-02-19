@@ -1,9 +1,35 @@
 "use client";
 
+import { useState } from "react";
+import { useAuth } from "@/hooks/useAuth";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Mail, Lock, Activity, ArrowRight } from "lucide-react";
+import { Activity, Mail, Lock, ArrowRight } from "lucide-react";
 
 export default function Login() {
+    const [email, setEmail] = useState("");
+    const [password, setPassword] = useState("");
+    const [error, setError] = useState("");
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
+    const { login } = useAuth();
+    const router = useRouter();
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setError("");
+        setIsSubmitting(true);
+        try {
+            await login(email, password);
+            router.push("/dashboard");
+        } catch (err) {
+            const message = err instanceof Error ? err.message : "Invalid email or password.";
+            setError(message);
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
     return (
         <div className="min-h-screen flex items-center justify-center px-4 py-20">
             <div className="max-w-md w-full">
@@ -16,14 +42,23 @@ export default function Login() {
                     <p className="text-slate-500 mt-2">Sign in to access your real-time health data.</p>
                 </div>
 
-                <div className="bg-white dark:bg-slate-900 p-8 rounded-[2rem] border border-slate-200 dark:border-slate-800 shadow-2xl space-y-6">
+                <form onSubmit={handleSubmit} className="bg-white dark:bg-slate-900 p-8 rounded-[2rem] border border-slate-200 dark:border-slate-800 shadow-2xl space-y-6">
+                    {error && (
+                        <div className="bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 p-4 rounded-2xl text-sm font-medium border border-red-100 dark:border-red-900/50">
+                            {error}
+                        </div>
+                    )}
+
                     <div className="space-y-2">
                         <label className="text-sm font-bold text-slate-500 uppercase tracking-widest pl-1">Email</label>
                         <div className="relative">
                             <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
                             <input
                                 type="email"
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
                                 placeholder="name@example.com"
+                                required
                                 className="w-full pl-12 pr-4 py-4 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 outline-none focus:ring-4 focus:ring-blue-500/10 transition-all font-medium"
                             />
                         </div>
@@ -35,23 +70,30 @@ export default function Login() {
                             <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
                             <input
                                 type="password"
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
                                 placeholder="••••••••"
+                                required
                                 className="w-full pl-12 pr-4 py-4 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 outline-none focus:ring-4 focus:ring-blue-500/10 transition-all font-medium"
                             />
                         </div>
                     </div>
 
-                    <button className="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white font-black rounded-2xl shadow-xl shadow-blue-500/30 transition-all hover:scale-[1.02] active:scale-95 flex items-center justify-center gap-2">
-                        Sign In <ArrowRight className="h-5 w-5" />
+                    <button
+                        type="submit"
+                        disabled={isSubmitting}
+                        className="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white font-black rounded-2xl shadow-xl shadow-blue-500/30 transition-all hover:scale-[1.02] active:scale-95 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                        {isSubmitting ? "Signing In..." : "Sign In"} <ArrowRight className="h-5 w-5" />
                     </button>
 
                     <div className="text-center pt-4">
                         <p className="text-sm text-slate-500">
-                            Don't have an account?{" "}
+                            Don&apos;t have an account?{" "}
                             <Link href="/signup" className="text-blue-600 font-bold hover:underline">Create one for free</Link>
                         </p>
                     </div>
-                </div>
+                </form>
             </div>
         </div>
     );

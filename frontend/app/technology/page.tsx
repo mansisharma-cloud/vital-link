@@ -56,7 +56,12 @@ export default function Technology() {
     );
 }
 
-function TechFeature({ icon, text }: any) {
+interface TechFeatureProps {
+    icon: React.ReactNode;
+    text: string;
+}
+
+function TechFeature({ icon, text }: TechFeatureProps) {
     return (
         <div className="flex items-center gap-4 text-slate-700 dark:text-slate-300">
             <div className="p-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg text-blue-600">
@@ -67,7 +72,13 @@ function TechFeature({ icon, text }: any) {
     );
 }
 
-function TechCard({ icon, title, description }: any) {
+interface TechCardProps {
+    icon: React.ReactNode;
+    title: string;
+    description: string;
+}
+
+function TechCard({ icon, title, description }: TechCardProps) {
     return (
         <div className="p-10 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl hover:-translate-y-2 transition-transform shadow-sm">
             <div className="mb-6">{icon}</div>

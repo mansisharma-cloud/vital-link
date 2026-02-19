@@ -1,13 +1,17 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Inter, Poppins } from "next/font/google";
 import "./globals.css";
-import Navigation from "@/components/Navigation";
 
-const inter = Inter({ subsets: ["latin"] });
+const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
+const poppins = Poppins({
+  weight: ["400", "500", "600", "700"],
+  subsets: ["latin"],
+  variable: "--font-poppins"
+});
 
 export const metadata: Metadata = {
-  title: "BioSense Live | Non-Invasive Health Monitoring",
-  description: "Real-time, continuous health monitoring with AI-driven insights.",
+  title: "Data Management of the Hospital",
+  description: "Advanced Hospital Data Management and Health Monitoring System",
 };
 
 export default function RootLayout({
@@ -16,13 +20,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body className={`${inter.className} min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-50 transition-colors duration-300`}>
-        <Navigation />
-        <main>{children}</main>
-        <footer className="py-8 px-4 border-t border-slate-200 dark:border-slate-800 text-center text-sm text-slate-500">
-          © {new Date().getFullYear()} BioSense Live. Engineering the future of healthcare.
-        </footer>
+    <html lang="en" className={`${inter.variable} ${poppins.variable}`}>
+      <body className="font-sans min-h-screen bg-[var(--background)] text-[var(--foreground)]">
+        {children}
       </body>
     </html>
   );
