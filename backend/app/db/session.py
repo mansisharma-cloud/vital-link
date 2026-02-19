@@ -24,17 +24,21 @@ Base = declarative_base()
 async def get_db():
     global engine, SessionLocal
 
+    print(f"Connecting to database: {engine.url}")
     try:
         # Try to connect with a 5-second timeout to avoid long hangs
         async with asyncio.timeout(5):
             async with engine.connect() as conn:
                 await conn.execute(select(1))
+        print("Database connection successful.")
     except (Exception, SQLAlchemyError) as e:
+        print(f"Database connection attempt failed: {e}")
         # If it's already using SQLite, we don't want to infinite loop,
         # but here we check if we should fallback.
         if "postgresql" in str(engine.url):
             logger.error(
                 f"Postgres connection failed: {e}. Falling back to SQLite.")
+            print("Falling back to SQLite...")
             sqlite_url = "sqlite+aiosqlite:///./sql_app.db"
             engine = create_async_engine(sqlite_url, echo=True, connect_args={
                                          "check_same_thread": False})

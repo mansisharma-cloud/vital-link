@@ -7,7 +7,6 @@ import {
     Thermometer,
     Droplet,
     Calendar,
-    Filter,
     Download,
     TrendingUp,
     TrendingDown,
@@ -15,8 +14,16 @@ import {
     Loader2
 } from "lucide-react";
 
+interface Metric {
+    id: number;
+    patient_id: number;
+    metric_type: string;
+    value: number;
+    timestamp: string;
+}
+
 export default function PatientDashboard() {
-    const [metrics, setMetrics] = useState<any[]>([]);
+    const [metrics, setMetrics] = useState<Metric[]>([]);
     const [loading, setLoading] = useState(false);
     const [timeRange, setTimeRange] = useState("Last 7 Days");
 
@@ -187,12 +194,22 @@ export default function PatientDashboard() {
     );
 }
 
-function MetricSummary({ label, value, unit, trend, up, icon, color }: any) {
-    const colorMap: any = {
-        rose: "bg-rose-50 text-rose-500 border-rose-100",
-        blue: "bg-blue-50 text-blue-500 border-blue-100",
-        amber: "bg-amber-50 text-amber-500 border-amber-100",
-        emerald: "bg-emerald-50 text-emerald-500 border-emerald-100"
+interface MetricSummaryProps {
+    label: string;
+    value: string | number;
+    unit: string;
+    trend: string;
+    up?: boolean;
+    icon: React.ReactNode;
+    color: "rose" | "blue" | "amber" | "emerald";
+}
+
+function MetricSummary({ label, value, unit, trend, up, icon, color }: MetricSummaryProps) {
+    const colorMap: Record<string, string> = {
+        rose: "bg-rose-50 dark:bg-rose-900/20 text-rose-600 dark:text-rose-400 border-rose-100 dark:border-rose-800/50",
+        blue: "bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 border-blue-100 dark:border-blue-800/50",
+        amber: "bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 border-amber-100 dark:border-amber-800/50",
+        emerald: "bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 border-emerald-100 dark:border-emerald-800/50"
     };
 
     return (
@@ -201,7 +218,7 @@ function MetricSummary({ label, value, unit, trend, up, icon, color }: any) {
                 <div className={`p-2.5 rounded-xl ${colorMap[color]} shadow-sm group-hover:scale-110 transition-transform`}>
                     {icon}
                 </div>
-                <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{label}</div>
+                <div className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest">{label}</div>
             </div>
             <div className="flex items-end justify-between">
                 <div>

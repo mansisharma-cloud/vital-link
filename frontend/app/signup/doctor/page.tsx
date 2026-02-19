@@ -24,10 +24,9 @@ export default function DoctorSignup() {
         license_number: "",
     });
 
-    const [hospitals, setHospitals] = useState<any[]>([]);
+    const [hospitals, setHospitals] = useState<{ id: number; name: string }[]>([]);
     const [isAddingHospital, setIsAddingHospital] = useState(false);
     const [loading, setLoading] = useState(false);
-    const [fetchingHospitals, setFetchingHospitals] = useState(true);
     const [error, setError] = useState("");
 
     useEffect(() => {
@@ -44,7 +43,7 @@ export default function DoctorSignup() {
         } catch (err) {
             console.error("Failed to fetch hospitals", err);
         } finally {
-            setFetchingHospitals(false);
+            setLoading(false);
         }
     };
 
@@ -72,8 +71,9 @@ export default function DoctorSignup() {
             }
 
             router.push("/login/doctor");
-        } catch (err: any) {
-            setError(err.message);
+        } catch (err) {
+            const message = err instanceof Error ? err.message : "Registration failed";
+            setError(message);
         } finally {
             setLoading(false);
         }

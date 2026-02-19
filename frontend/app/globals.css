@@ -5,19 +5,19 @@
 }
 
 :root {
-  --primary: #2A7DE1;
-  --secondary: #2C9A6E;
-  --background: #F5F7FA;
-  --foreground: #333333;
+  --primary: #3B82F6;
+  --secondary: #10B981;
+  --background: #f8fafc;
+  --foreground: #0f172a;
   --accent-coral: #FF7F7F;
   --accent-gold: #FFB347;
-  --card: #FFFFFF;
+  --card: #ffffff;
 }
 
 .dark {
-  --background: #0F172A;
+  --background: #000000;
   --foreground: #F8FAFC;
-  --card: #1E293B;
+  --card: #0A0A0A;
   --primary: #3B82F6;
 }
 

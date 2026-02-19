@@ -3,6 +3,23 @@
 import { useEffect, useState } from "react";
 import { Users, UserPlus, Calendar, AlertCircle, TrendingUp, Search, ChevronRight } from "lucide-react";
 
+interface Doctor {
+    id: number;
+    full_name: string;
+    hospital_name: string;
+    hospital_address: string;
+    hospital_contact: string;
+    role: string;
+    emergency_contact: string;
+    consultation_timings: string;
+}
+
+interface Patient {
+    id: number;
+    patient_id: string;
+    full_name: string;
+}
+
 export default function DoctorDashboard() {
     const [stats, setStats] = useState({
         totalPatients: 0,
@@ -10,7 +27,7 @@ export default function DoctorDashboard() {
         todayAppointments: 0,
         pendingActions: 2
     });
-    const [doctor, setDoctor] = useState<any>(null);
+    const [doctor, setDoctor] = useState<Doctor | null>(null);
 
     useEffect(() => {
         fetchStats();
@@ -56,7 +73,7 @@ export default function DoctorDashboard() {
         } catch (err) { }
     };
 
-    const [patients, setPatients] = useState<any[]>([]);
+    const [patients, setPatients] = useState<Patient[]>([]);
 
     return (
         <div className="space-y-10 animate-fade-in">
@@ -199,8 +216,16 @@ export default function DoctorDashboard() {
     );
 }
 
-function StatCard({ title, value, icon, trend, color }: any) {
-    const colorMap: any = {
+interface StatCardProps {
+    title: string;
+    value: string;
+    icon: React.ReactNode;
+    trend: string;
+    color: "blue" | "emerald" | "amber" | "rose";
+}
+
+function StatCard({ title, value, icon, trend, color }: StatCardProps) {
+    const colorMap: Record<string, string> = {
         blue: "bg-blue-50 text-blue-600",
         emerald: "bg-emerald-50 text-emerald-600",
         amber: "bg-amber-50 text-amber-600",

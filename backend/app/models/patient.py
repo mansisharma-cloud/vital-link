@@ -25,4 +25,3 @@ class Patient(Base):
     hospital = relationship("Hospital", back_populates="patients")
     appointments = relationship("Appointment", back_populates="patient")
     health_metrics = relationship("HealthMetric", back_populates="patient")
-    predictions = relationship("Prediction", back_populates="patient")

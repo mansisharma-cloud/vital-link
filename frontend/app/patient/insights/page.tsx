@@ -118,7 +118,7 @@ export default function PatientInsights() {
                             <Activity size={24} />
                         </div>
                         <div>
-                            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Analysis Status</p>
+                            <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">Analysis Status</p>
                             <p className={`text-xl font-black ${status === 'Healthy' ? 'text-emerald-400' : status === 'Critical' ? 'text-rose-400' : 'text-amber-400'}`}>
                                 {status}
                             </p>
@@ -206,7 +206,7 @@ function InsightCard({ insight }: any) {
     return (
         <div className="glass-card p-10 flex flex-col md:flex-row gap-8 group hover:border-blue-500/50 transition-all cursor-default">
             <div className="flex flex-col items-center justify-between py-2 border-r border-slate-100 dark:border-slate-800 pr-8 min-w-[120px]">
-                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Confidence</span>
+                <span className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest leading-none mb-1">Confidence</span>
                 <div className="text-4xl font-black text-blue-600 uppercase tracking-tighter">{insight.confidence}</div>
                 <div className="flex gap-1 mt-4">
                     {[1, 2, 3, 4, 5].map(i => <div key={i} className="w-1 h-3 bg-blue-600 rounded-full" />)}
@@ -238,7 +238,7 @@ function RecommendItem({ title, value, desc }: any) {
     return (
         <div className="space-y-2">
             <div className="flex justify-between items-center">
-                <span className="text-xs font-black text-slate-400 uppercase tracking-widest">{title}</span>
+                <span className="text-xs font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest">{title}</span>
                 <span className="text-sm font-black text-blue-600">{value}</span>
             </div>
             <p className="text-xs text-slate-600 dark:text-slate-400 font-medium leading-relaxed italic border-l-2 border-slate-100 dark:border-slate-800 pl-4">

@@ -64,7 +64,7 @@ export default function PatientHome() {
                     <p className="text-slate-500 font-medium italic">Everything looks good today. Keep up the healthy habits!</p>
                 </div>
 
-                <div className="flex items-center gap-3 bg-white dark:bg-slate-900 px-6 py-3 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+                <div className="flex items-center gap-3 bg-white dark:bg-slate-800 px-6 py-3 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
                     <Calendar size={20} className="text-emerald-600" />
                     <span className="font-bold text-slate-700 dark:text-slate-200">{new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</span>
                 </div>
@@ -219,7 +219,9 @@ function MetricBox({ label, value, unit, icon, status }: any) {
 }
 
 function AlertBox({ type, title, message, time }: any) {
-    const colors = type === 'warning' ? 'bg-amber-100/50 text-amber-700 border-amber-100' : 'bg-blue-100/50 text-blue-700 border-blue-100';
+    const colors = type === 'warning'
+        ? 'bg-amber-100/50 dark:bg-amber-900/20 text-amber-900 dark:text-amber-400 border-amber-200 dark:border-amber-800/50'
+        : 'bg-blue-100/50 dark:bg-blue-900/20 text-blue-900 dark:text-blue-400 border-blue-200 dark:border-blue-800/50';
     return (
         <div className={`p-4 rounded-2xl border ${colors} flex flex-col gap-1`}>
             <div className="flex justify-between items-center">

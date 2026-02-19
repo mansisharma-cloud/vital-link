@@ -90,7 +90,7 @@ export default function PatientLogin() {
                                     maxLength={8}
                                 />
                             </div>
-                            <p className="mt-2 text-xs text-slate-400 italic">Format: DDMMYYYY (e.g., 25121990 for Dec 25, 1990)</p>
+                            <p className="mt-2 text-xs text-slate-500 dark:text-slate-400 italic">Format: DDMMYYYY (e.g., 25121990 for Dec 25, 1990)</p>
                         </div>
 
                         {error && (

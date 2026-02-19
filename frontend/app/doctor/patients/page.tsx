@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { Search, Filter, UserPlus, Users, ChevronRight, Loader2, CheckCircle, Copy, AlertCircle, Calendar, X, Droplet, TrendingUp, Phone, Activity, BrainCircuit, Sparkles } from "lucide-react";
 
-export default function DoctorPatients() {
+function DoctorPatientsContent() {
     const searchParams = useSearchParams();
     const router = useRouter();
     const activeTab = searchParams.get("tab") || "old";
@@ -510,6 +510,19 @@ export default function DoctorPatients() {
                 </div>
             )}
         </div>
+    );
+}
+
+export default function DoctorPatients() {
+    return (
+        <Suspense fallback={
+            <div className="h-screen flex flex-col items-center justify-center gap-4">
+                <Loader2 className="animate-spin text-blue-600" size={48} />
+                <p className="text-xl font-black uppercase tracking-tighter text-slate-400 italic">Initializing Patient Registry...</p>
+            </div>
+        }>
+            <DoctorPatientsContent />
+        </Suspense>
     );
 }
 
