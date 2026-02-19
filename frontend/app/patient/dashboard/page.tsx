@@ -44,7 +44,9 @@ export default function PatientDashboard() {
             await fetchMetrics();
         };
         load();
-    }, [timeRange, fetchMetrics]);
+        const interval = setInterval(load, 5000);
+        return () => clearInterval(interval);
+    }, [fetchMetrics]);
 
     return (
         <div className="space-y-10 animate-fade-in pb-20">

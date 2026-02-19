@@ -53,9 +53,10 @@ export default function DoctorSignup() {
         setError("");
 
         // Prepare payload
+        const hospitalIdValue = formData.hospital_id ? parseInt(formData.hospital_id) : null;
         const payload = {
             ...formData,
-            hospital_id: isAddingHospital ? null : (formData.hospital_id ? parseInt(formData.hospital_id) : null)
+            hospital_id: isAddingHospital ? null : (isNaN(hospitalIdValue as number) ? null : hospitalIdValue)
         };
 
         try {

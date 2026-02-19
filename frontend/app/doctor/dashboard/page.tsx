@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { Users, UserPlus, Calendar, AlertCircle, TrendingUp, ChevronRight } from "lucide-react";
 
 interface Doctor {
@@ -21,6 +22,7 @@ interface Patient {
 }
 
 export default function DoctorDashboard() {
+    const router = useRouter();
     const [stats, setStats] = useState({
         totalPatients: 0,
         newPatients: 0,
@@ -44,11 +46,14 @@ export default function DoctorDashboard() {
     const fetchStats = useCallback(async () => {
         const token = localStorage.getItem("token");
         try {
-            const [patRes, appRes] = await Promise.all([
+            const [patRes, appRes, statsRes] = await Promise.all([
                 fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1'}/doctors/patients?limit=10`, {
                     headers: { "Authorization": `Bearer ${token}` }
                 }),
                 fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1'}/doctors/appointments`, {
+                    headers: { "Authorization": `Bearer ${token}` }
+                }),
+                fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/v1/doctors/stats`, {
                     headers: { "Authorization": `Bearer ${token}` }
                 })
             ]);
@@ -56,13 +61,17 @@ export default function DoctorDashboard() {
             if (patRes.ok) {
                 const patientsList = await patRes.json();
                 setPatients(patientsList);
-                setStats(prev => ({
-                    ...prev,
-                    totalPatients: patientsList.length,
-                    newPatients: patientsList.slice(0, 5).length // Just as a simple metric
-                }));
             }
-            if (appRes.ok) {
+            if (statsRes.ok) {
+                const statsData = await statsRes.json();
+                setStats({
+                    totalPatients: statsData.total_patients,
+                    newPatients: statsData.new_patients,
+                    todayAppointments: statsData.today_appointments,
+                    pendingActions: statsData.pending_actions
+                });
+            } else if (appRes.ok) {
+                // Fallback for appointments if stats fails
                 const apps = await appRes.json();
                 setStats(prev => ({ ...prev, todayAppointments: apps.length }));
             }
@@ -71,6 +80,7 @@ export default function DoctorDashboard() {
         }
     }, []);
 
+
     useEffect(() => {
         const loadData = async () => {
             await fetchStats();
@@ -78,6 +88,8 @@ export default function DoctorDashboard() {
             if (token) await fetchDoctor(token);
         };
         loadData();
+        const interval = setInterval(fetchStats, 10000);
+        return () => clearInterval(interval);
     }, [fetchStats, fetchDoctor]);
 
     return (
@@ -172,7 +184,7 @@ export default function DoctorDashboard() {
                                             </td>
                                             <td className="py-4 text-right">
                                                 <button
-                                                    onClick={() => window.location.href = `/doctor/patients?tab=old&id=${patient.id}`}
+                                                    onClick={() => router.push(`/doctor/patients?tab=old&id=${patient.id}`)}
                                                     className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-slate-400 transition-colors"
                                                 >
                                                     <ChevronRight size={18} />
@@ -192,7 +204,7 @@ export default function DoctorDashboard() {
                         <h3 className="text-xl font-bold mb-4">Quick Action</h3>
                         <p className="text-white/80 text-sm mb-6 leading-relaxed">Add a new patient to your hospital records and generate their unique ID instantly.</p>
                         <button
-                            onClick={() => window.location.href = '/doctor/patients?tab=new'}
+                            onClick={() => router.push('/doctor/patients?tab=new')}
                             className="w-full py-4 bg-white text-blue-600 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-slate-50 transition-colors"
                         >
                             <UserPlus size={20} /> Add New Patient

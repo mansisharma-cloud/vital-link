@@ -22,7 +22,7 @@ async def websocket_endpoint(websocket: WebSocket):
                 "glucose": round(glucose, 1),
                 "temperature": round(temp, 1),
                 "stress_level": stress,
-                "timestamp": time.time(),
+                "timestamp": int(time.time() * 1000),
                 "status": "Normal" if heart_rate < 90 else "Review"
             }
             await websocket.send_json(data)

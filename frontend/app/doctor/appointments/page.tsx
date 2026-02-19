@@ -218,8 +218,8 @@ export default function DoctorAppointments() {
 
             {/* Booking Modal */}
             {showBookingForm && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm animate-fade-in">
-                    <div className="w-full max-w-2xl bg-white dark:bg-slate-900 rounded-[2.5rem] shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden animate-slide-up">
+                <div className="fixed inset-0 z-[100] flex flex-col items-center justify-start p-4 md:p-12 bg-slate-950/60 backdrop-blur-sm animate-fade-in overflow-y-auto">
+                    <div className="w-full max-w-2xl bg-white dark:bg-slate-900 rounded-[2.5rem] shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden animate-slide-up my-auto">
                         <div className="p-10 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50/50 dark:bg-slate-800/30">
                             <div>
                                 <h2 className="text-2xl font-black uppercase tracking-tighter">Book Consultation</h2>

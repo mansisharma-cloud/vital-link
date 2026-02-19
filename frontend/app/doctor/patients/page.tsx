@@ -41,6 +41,7 @@ function DoctorPatientsContent() {
     const router = useRouter();
     const patientIdParam = searchParams.get("id");
     const activeTab = searchParams.get("tab") || "old";
+    const patientIdParam = searchParams.get("id");
 
     useEffect(() => {
         if (patientIdParam) {
@@ -129,11 +130,22 @@ function DoctorPatientsContent() {
     }, [activeTab, fetchPatients]);
 
     useEffect(() => {
-        if (selectedPatientId) {
+        if (patientIdParam) {
+            setSelectedPatientId(parseInt(patientIdParam));
+        } else {
+            setSelectedPatientId(null);
+            setPatientDetail(null);
+        }
+    }, [patientIdParam]);
+
+    useEffect(() => {
+        if (selectedPatientId !== null) {
             const load = async () => {
                 await fetchPatientDetail(selectedPatientId);
             };
             load();
+            const interval = setInterval(load, 10000);
+            return () => clearInterval(interval);
         }
     }, [selectedPatientId, fetchPatientDetail]);
 
@@ -409,8 +421,8 @@ function DoctorPatientsContent() {
                                             <td className="px-8 py-5 text-slate-500 font-bold text-sm tracking-tight">{patient.contact_number}</td>
                                             <td className="px-8 py-5 text-right">
                                                 <button
-                                                    onClick={() => setSelectedPatientId(patient.id)}
-                                                    className="px-6 py-2.5 bg-slate-900 text-white dark:bg-white dark:text-slate-900 rounded-xl font-black text-xs uppercase tracking-widest hover:scale-105 transition-all shadow-md"
+                                                    onClick={() => router.push(`?tab=old&id=${patient.id}`)}
+                                                    className="px-6 py-2.5 bg-slate-900 text-white dark:bg-white dark:text-slate-900 rounded-xl font-black text-xs uppercase tracking-widest hover:scale-105 transition-all shadow-md group-hover:bg-blue-600 group-hover:text-white"
                                                 >
                                                     View Details
                                                 </button>
@@ -446,15 +458,14 @@ function DoctorPatientsContent() {
             )}
 
             {/* Patient Detail Modal */}
-            {selectedPatientId && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-slate-950/60 backdrop-blur-md animate-fade-in overflow-y-auto">
-                    <div className="w-full max-w-5xl bg-white dark:bg-slate-900 rounded-[3rem] shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden animate-slide-up">
+            {selectedPatientId !== null && (
+                <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center p-4 md:p-8 bg-slate-950/60 backdrop-blur-md animate-fade-in overflow-y-auto">
+                    <div className="w-full max-w-5xl bg-white dark:bg-slate-900 rounded-[2.5rem] md:rounded-[4rem] shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden animate-slide-up flex flex-col max-h-[90vh] my-auto">
                         {detailLoading ? (
                             <div className="h-[600px] flex flex-col items-center justify-center gap-6">
                                 <Loader2 className="animate-spin text-blue-600" size={48} />
                                 <p className="text-xl font-black uppercase tracking-tighter text-slate-400 italic">Synchronizing patient data...</p>
                             </div>
-
                         ) : patientDetail ? (
                             <div className="flex flex-col h-full max-h-[90vh]">
                                 <div className="p-10 border-b border-slate-100 dark:border-slate-800 flex justify-between items-start bg-slate-50/50 dark:bg-slate-800/30">
@@ -472,7 +483,7 @@ function DoctorPatientsContent() {
                                         </div>
                                     </div>
                                     <button
-                                        onClick={() => setSelectedPatientId(null)}
+                                        onClick={() => router.push('?tab=old')}
                                         className="p-4 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-3xl text-slate-400 hover:text-red-500 transition-all"
                                     >
                                         <X size={28} />
@@ -480,11 +491,39 @@ function DoctorPatientsContent() {
                                 </div>
 
                                 <div className="flex-1 overflow-y-auto p-12 space-y-12">
-                                    <div className="grid md:grid-cols-3 gap-8">
-                                        <InfoCard label="Contact" value={patientDetail.contact_number} icon={<Phone size={18} />} />
-                                        <InfoCard label="Emergency" value={patientDetail.emergency_contact} icon={<AlertCircle size={18} />} />
-                                        <InfoCard label="Blood Group" value={patientDetail.blood_group || "O+"} icon={<Droplet size={18} />} />
-                                    </div>
+                                    {/* Helper function to get the latest metric value */}
+                                    {(() => {
+                                        const getLatestMetric = (type: string) => {
+                                            const metric = patientMetrics
+                                                .filter(m => m.metric_type.toLowerCase() === type.toLowerCase())
+                                                .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())[0];
+                                            return metric ? metric.value : "N/A";
+                                        };
+
+                                        // Helper component for mini metric cards
+                                        const MetricMiniCard = ({ label, value, unit }: { label: string, value: string | number, unit: string }) => (
+                                            <div className="p-6 bg-slate-50 dark:bg-slate-800/50 rounded-3xl border border-slate-100 dark:border-slate-800/50 flex flex-col items-start gap-2 group hover:border-blue-500/50 transition-all">
+                                                <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest leading-none">{label}</p>
+                                                <p className="text-xl font-black text-slate-800 dark:text-slate-200">{value} <span className="text-sm font-bold text-slate-500">{unit}</span></p>
+                                            </div>
+                                        );
+
+                                        return (
+                                            <>
+                                                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                                    <MetricMiniCard label="Heart Rate" value={getLatestMetric('heart_rate')} unit="BPM" />
+                                                    <MetricMiniCard label="Glucose" value={getLatestMetric('glucose')} unit="mg/dL" />
+                                                    <MetricMiniCard label="SpO2" value={getLatestMetric('spo2')} unit="%" />
+                                                    <MetricMiniCard label="Stress" value={getLatestMetric('stress_level')} unit="%" />
+                                                </div>
+                                                <div className="grid md:grid-cols-3 gap-8">
+                                                    <InfoCard label="Contact" value={patientDetail.contact_number} icon={<Phone size={18} />} />
+                                                    <InfoCard label="Emergency" value={patientDetail.emergency_contact} icon={<AlertCircle size={18} />} />
+                                                    <InfoCard label="Blood Group" value={patientDetail.blood_group || "O+"} icon={<Droplet size={18} />} />
+                                                </div>
+                                            </>
+                                        );
+                                    })()}
 
                                     <div className="space-y-6">
                                         <h3 className="text-sm font-black text-slate-400 uppercase tracking-[0.3em] flex items-center gap-3">
@@ -495,7 +534,7 @@ function DoctorPatientsContent() {
                                                 <h4 className="text-lg font-black uppercase tracking-tighter mb-6 flex items-center gap-2">
                                                     <BrainCircuit size={20} className="text-emerald-500" /> AI Risk Assessment
                                                 </h4>
-                                                <div className="space-y-4 flex-1">
+                                                <div className="space-y-4 flex-1 overflow-y-auto pr-2 max-h-[400px]">
                                                     {patientPredictions && patientPredictions.predictions?.length > 0 ? (
                                                         patientPredictions.predictions.map((p, idx) => (
                                                             <div key={idx} className="p-4 bg-slate-50 dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700">

@@ -7,6 +7,9 @@ class HealthMetrics(BaseModel):
     glucose: Optional[float] = Field(None, example=95.0)
     stress_level: Optional[float] = Field(None, example=25.0)
     temperature: Optional[float] = Field(None, example=36.6)
+    spo2: Optional[float] = Field(None, example=98.0)
+    blood_pressure_sys: Optional[float] = Field(None, example=120.0)
+    blood_pressure_dia: Optional[float] = Field(None, example=80.0)
 
 
 class HealthAnalysisRequest(BaseModel):

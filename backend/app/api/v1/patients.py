@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
-from sqlalchemy.orm import selectinload
+from sqlalchemy.orm import selectinload, joinedload
 from typing import List
 from app.db.session import get_db
 from app.api.deps import get_current_patient
@@ -16,18 +16,30 @@ router = APIRouter()
 
 
 @router.get("/me", response_model=PatientSchema)
-async def get_patient_me(current_patient: Patient = Depends(get_current_patient)):
-    # Add display fields for frontend
-    current_patient.doctor_name = current_patient.doctor.full_name
-    current_patient.doctor_specialization = current_patient.doctor.role
-    current_patient.doctor_qualification = current_patient.doctor.qualification
-    current_patient.hospital_name = current_patient.hospital.name
-    current_patient.hospital_address = current_patient.hospital.address
-    current_patient.hospital_contact = current_patient.hospital.contact_number
-    # Simple DOB display format
-    dob = current_patient.dob  # assuming DDMMYYYY
-    if len(dob) == 8:
-        current_patient.dob_display = f"{dob[:2]}-{dob[2:4]}-{dob[4:]}"
+async def get_patient_me(
+    db: AsyncSession = Depends(get_db),
+    current_patient: Patient = Depends(get_current_patient)
+):
+    # Ensure relationships are loaded
+    result = await db.execute(
+        select(Patient)
+        .options(joinedload(Patient.doctor), joinedload(Patient.hospital))
+        .where(Patient.id == current_patient.id)
+    )
+    p = result.scalars().first()
+    if p:
+        # Add display fields for frontend
+        p.doctor_name = p.doctor.full_name
+        p.doctor_specialization = p.doctor.role
+        p.doctor_qualification = p.doctor.qualification
+        p.hospital_name = p.hospital.name
+        p.hospital_address = p.hospital.address
+        p.hospital_contact = p.hospital.contact_number
+        # Simple DOB display format
+        dob = p.dob  # assuming DDMMYYYY
+        if len(dob) == 8:
+            p.dob_display = f"{dob[:2]}-{dob[2:4]}-{dob[4:]}"
+        return p
     return current_patient
 
 
@@ -45,17 +57,24 @@ async def update_patient_me(
     await db.commit()
     await db.refresh(current_patient)
 
-    # Repopulate display fields if needed (same logic as in get_patient_me)
-    current_patient.doctor_name = current_patient.doctor.full_name
-    current_patient.doctor_specialization = current_patient.doctor.role
-    current_patient.doctor_qualification = current_patient.doctor.qualification
-    current_patient.hospital_name = current_patient.hospital.name
-    current_patient.hospital_address = current_patient.hospital.address
-    current_patient.hospital_contact = current_patient.hospital.contact_number
-    # Simple DOB display format
-    dob = current_patient.dob  # assuming DDMMYYYY
-    if len(dob) == 8:
-        current_patient.dob_display = f"{dob[:2]}-{dob[2:4]}-{dob[4:]}"
+    # Re-fetch with relationships
+    result = await db.execute(
+        select(Patient)
+        .options(joinedload(Patient.doctor), joinedload(Patient.hospital))
+        .where(Patient.id == current_patient.id)
+    )
+    p = result.scalars().first()
+    if p:
+        p.doctor_name = p.doctor.full_name
+        p.doctor_specialization = p.doctor.role
+        p.doctor_qualification = p.doctor.qualification
+        p.hospital_name = p.hospital.name
+        p.hospital_address = p.hospital.address
+        p.hospital_contact = p.hospital.contact_number
+        dob = p.dob
+        if len(dob) == 8:
+            p.dob_display = f"{dob[:2]}-{dob[2:4]}-{dob[4:]}"
+        return p
     return current_patient
 
 
@@ -67,7 +86,7 @@ async def list_appointments(
     result = await db.execute(
         select(Appointment)
         .where(Appointment.patient_id == current_patient.id)
-        .options(selectinload(Appointment.doctor))
+        .options(joinedload(Appointment.doctor))
     )
     appointments = result.scalars().all()
     for app in appointments:

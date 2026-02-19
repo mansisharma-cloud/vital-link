@@ -3,6 +3,8 @@ from app.schemas.appointment import AppointmentCreate, Appointment as Appointmen
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, or_
+from sqlalchemy.orm import joinedload
+
 from typing import List, Optional
 from app.db.session import get_db
 from app.api.deps import get_current_doctor
@@ -18,11 +20,52 @@ from app.core.security import get_password_hash
 router = APIRouter()
 
 
+@router.get("/stats")
+async def get_doctor_stats(
+    db: AsyncSession = Depends(get_db),
+    current_doctor: Doctor = Depends(get_current_doctor)
+):
+    # Total patients for this doctor
+    patient_count_result = await db.execute(
+        select(func.count(Patient.id)).where(
+            Patient.doctor_id == current_doctor.id)
+    )
+    total_patients = patient_count_result.scalar_one()
+
+    # Total appointments (today)
+    from datetime import date
+    today = date.today().isoformat()
+    app_count_result = await db.execute(
+        select(func.count(Appointment.id))
+        .where(Appointment.doctor_id == current_doctor.id)
+        .where(Appointment.date == today)
+    )
+    today_appointments = app_count_result.scalar_one()
+
+    return {
+        "total_patients": total_patients,
+        "today_appointments": today_appointments,
+        "pending_actions": 2,
+        "new_patients": total_patients  # Simplified for now
+    }
+
+
 @router.get("/me", response_model=DoctorSchema)
-async def get_doctor_me(current_doctor: Doctor = Depends(get_current_doctor)):
-    current_doctor.hospital_name = current_doctor.hospital.name
-    current_doctor.hospital_address = current_doctor.hospital.address
-    current_doctor.hospital_contact = current_doctor.hospital.contact_number
+async def get_doctor_me(
+    db: AsyncSession = Depends(get_db),
+    current_doctor: Doctor = Depends(get_current_doctor)
+):
+    # Ensure hospital is loaded
+    result = await db.execute(
+        select(Doctor).options(joinedload(Doctor.hospital)).where(
+            Doctor.id == current_doctor.id)
+    )
+    doc = result.scalars().first()
+    if doc:
+        doc.hospital_name = doc.hospital.name
+        doc.hospital_address = doc.hospital.address
+        doc.hospital_contact = doc.hospital.contact_number
+        return doc
     return current_doctor
 
 
@@ -105,7 +148,8 @@ async def list_patients(
     limit: int = 20,
     search: Optional[str] = None
 ):
-    query = select(Patient).where(Patient.doctor_id == current_doctor.id)
+    query = select(Patient).options(joinedload(Patient.hospital)
+                                    ).where(Patient.doctor_id == current_doctor.id)
 
     if search:
         query = query.where(
@@ -117,7 +161,11 @@ async def list_patients(
 
     query = query.offset(skip).limit(limit)
     result = await db.execute(query)
-    return result.scalars().all()
+    patients = result.scalars().all()
+    for p in patients:
+        if p.hospital:
+            p.hospital_name = p.hospital.name
+    return patients
 
 
 @router.get("/appointments", response_model=List[AppointmentSchema])
@@ -125,7 +173,11 @@ async def list_appointments(
     db: AsyncSession = Depends(get_db),
     current_doctor: Doctor = Depends(get_current_doctor)
 ):
-    result = await db.execute(select(Appointment).where(Appointment.doctor_id == current_doctor.id))
+    result = await db.execute(
+        select(Appointment)
+        .options(joinedload(Appointment.patient))
+        .where(Appointment.doctor_id == current_doctor.id)
+    )
     appointments = result.scalars().all()
     for app in appointments:
         app.patient_name = app.patient.full_name
@@ -185,6 +237,7 @@ async def get_patient_detail(
 ):
     result = await db.execute(
         select(Patient)
+        .options(joinedload(Patient.hospital))
         .where(Patient.id == patient_id)
         .where(Patient.doctor_id == current_doctor.id)
         .options(selectinload(Patient.hospital))
