@@ -237,14 +237,16 @@ async def get_patient_by_clinical_id(
     result = await db.execute(
         select(Patient)
         .options(joinedload(Patient.hospital))
-        .where(Patient.patient_id == clinical_id)
+        .where(Patient.patient_id.ilike(clinical_id))
         .where(Patient.doctor_id == current_doctor.id)
     )
     patient = result.scalars().first()
     if not patient:
-        raise HTTPException(status_code=404, detail="Patient not found")
+        raise HTTPException(
+            status_code=404, detail=f"Patient {clinical_id} not found for current doctor")
 
-    patient.hospital_name = patient.hospital.name
+    if patient.hospital:
+        patient.hospital_name = patient.hospital.name
     patient.dob_display = "XX-XX-XXXX"
     return patient
 
@@ -264,16 +266,16 @@ async def get_patient_detail(
     )
     patient = result.scalars().first()
     if not patient:
-        raise HTTPException(status_code=404, detail="Patient not found")
+        raise HTTPException(
+            status_code=404, detail=f"Patient ID {patient_id} not found for current doctor")
 
     # Populate extra fields
-    patient.hospital_name = patient.hospital.name
-    dob = patient.dob
-    # We shouldn't send hashed DOB, but here we just show the display if possible.
-    # Note: Backend stores hashed DOB now. We might need a plain_dob field if we want to show it,
-    # or just show Masked.
-    patient.dob_display = "XX-XX-XXXX"
+    if patient.hospital:
+        patient.hospital_name = patient.hospital.name
+        patient.hospital_address = patient.hospital.address
+        patient.hospital_contact = patient.hospital.contact_number
 
+    patient.dob_display = "XX-XX-XXXX"
     return patient
 
 

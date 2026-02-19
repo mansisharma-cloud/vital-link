@@ -58,15 +58,19 @@ export default function PatientDetailPage() {
     const [predictions, setPredictions] = useState<PredictionSummary | null>(null);
     const [appointments, setAppointments] = useState<Appointment[]>([]);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
 
     const fetchAllData = useCallback(async () => {
         const token = localStorage.getItem("token");
         try {
             // 1. Fetch patient details by clinical ID
-            const detRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1'}/doctors/patients/by-clinical-id/${clinicalId}`, {
+            const detRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1'}/doctors/patients/by-clinical-id/${encodeURIComponent(clinicalId)}`, {
                 headers: { "Authorization": `Bearer ${token}` }
             });
-            if (!detRes.ok) throw new Error("Patient not found");
+            if (!detRes.ok) {
+                const errorData = await detRes.json().catch(() => ({}));
+                throw new Error(errorData.detail || `Clinical dossier for ${clinicalId} could not be retrieved.`);
+            }
             const patientData = await detRes.json();
             setPatient(patientData);
 
@@ -90,8 +94,9 @@ export default function PatientDetailPage() {
                 // Filter appointments for this patient
                 setAppointments(allApps.filter((a: any) => a.patient_id === patientData.id));
             }
-        } catch (err) {
+        } catch (err: any) {
             console.error("Error fetching data:", err);
+            setError(err.message || "An unexpected error occurred while fetching clinical data.");
         } finally {
             setLoading(false);
         }
@@ -112,12 +117,20 @@ export default function PatientDetailPage() {
         );
     }
 
-    if (!patient) {
+    if (error || !patient) {
         return (
-            <div className="min-h-screen flex flex-col items-center justify-center gap-6 bg-slate-50 dark:bg-slate-950">
+            <div className="min-h-screen flex flex-col items-center justify-center gap-6 bg-slate-50 dark:bg-slate-950 p-6 text-center">
                 <AlertCircle size={64} className="text-rose-500" />
-                <h2 className="text-2xl font-black">Patient Profile Not Found</h2>
-                <button onClick={() => router.back()} className="btn-primary">Return to Registry</button>
+                <div className="space-y-2">
+                    <h2 className="text-2xl font-black uppercase tracking-tighter">Clinical Access Error</h2>
+                    <p className="text-slate-500 font-medium max-w-md mx-auto">{error || "The requested patient profile could not be located in the clinical registry."}</p>
+                </div>
+                <button
+                    onClick={() => router.push('/doctor/patients')}
+                    className="px-8 py-3 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-2xl font-black text-xs uppercase tracking-widest hover:scale-105 transition-all shadow-lg"
+                >
+                    Return to Registry
+                </button>
             </div>
         );
     }
