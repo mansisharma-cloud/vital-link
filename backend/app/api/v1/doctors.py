@@ -1,3 +1,4 @@
+from sqlalchemy.orm import selectinload
 from app.models.appointment import Appointment
 from app.schemas.appointment import AppointmentCreate, Appointment as AppointmentSchema
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -227,7 +228,26 @@ async def update_appointment_status(
     return appointment
 
 
-from sqlalchemy.orm import selectinload
+@router.get("/patients/by-clinical-id/{clinical_id}", response_model=PatientSchema)
+async def get_patient_by_clinical_id(
+    clinical_id: str,
+    db: AsyncSession = Depends(get_db),
+    current_doctor: Doctor = Depends(get_current_doctor)
+):
+    result = await db.execute(
+        select(Patient)
+        .options(joinedload(Patient.hospital))
+        .where(Patient.patient_id == clinical_id)
+        .where(Patient.doctor_id == current_doctor.id)
+    )
+    patient = result.scalars().first()
+    if not patient:
+        raise HTTPException(status_code=404, detail="Patient not found")
+
+    patient.hospital_name = patient.hospital.name
+    patient.dob_display = "XX-XX-XXXX"
+    return patient
+
 
 @router.get("/patients/{patient_id}", response_model=PatientSchema)
 async def get_patient_detail(
