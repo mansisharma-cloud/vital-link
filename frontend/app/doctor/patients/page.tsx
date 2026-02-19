@@ -41,7 +41,7 @@ function DoctorPatientsContent() {
     const router = useRouter();
     const patientIdParam = searchParams.get("id");
     const activeTab = searchParams.get("tab") || "old";
-    const patientIdParam = searchParams.get("id");
+
 
     useEffect(() => {
         if (patientIdParam) {
